@@ -157,6 +157,11 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             rotationRate += delta;
         }
 
+        function resetRotation() {
+            rotationRate = 0;
+            mesh.rotation.y = 0;
+        }
+
         function update() {
             mesh.rotation.y += rotationRate;
         }
@@ -166,6 +171,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             mesh: mesh,
             update: update,
             incRotationRate: incRotationRate,
+            resetRotation: resetRotation,
         }
     }
 
@@ -194,6 +200,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         console.log("die");
     }
 
+    var gopherRemovalInProgress = false;
     function action_removeGopher(tile) {
         var contained = gophers.filter( function(g) {
             return g.tile === tile;
@@ -210,18 +217,23 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             }
 
             var tween = new TWEEN.Tween( currentState )
-            .to( targetState, 2000 )
-            .easing( TWEEN.Easing.Circular.In )
-            .onUpdate( function() {
-                gopher.mesh.position.z = currentState.z; 
-                gopher.incRotationRate(0.01);
-            })
-            .onComplete( function() {
-                scene.remove( gopher.mesh )
-                gophers = gophers.filter( function(g) { return g !== gopher; });
-                tile.hasGopher = false;
-                onGopherGone();
-            })
+                .to( targetState, 2000 )
+                .easing( TWEEN.Easing.Circular.In )
+                .onUpdate( function() {
+                    gopher.mesh.position.z = currentState.z; 
+                    gopher.incRotationRate(0.01);
+                })
+                .onStart( function() {
+                    gopherRemovalInProgress = true;
+                })
+                .onComplete( function() {
+                    scene.remove( gopher.mesh )
+                    gophers = gophers.filter( function(g) { return g !== gopher; });
+                    tile.hasGopher = false;
+                    onGopherGone();
+                    gopherRemovalInProgress = false;
+                });
+            console.log("test");
 
             tween.start();
     }
@@ -389,6 +401,10 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
+        if( gopherRemovalInProgress ) {
+            return;
+        }
+
         var vector = new THREE.Vector3( mouse.x, mouse.y, 1);
         projector.unprojectVector(vector, camera);
 
@@ -433,7 +449,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 else {
                     heli.deactivateVacuum();
                 }
-            })
+            });
 
         heliTween.start();
     }
