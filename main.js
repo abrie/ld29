@@ -1,23 +1,18 @@
 "use strict";
-require(['lib/three.min'], function() {
+require(['util','lib/three.min'], function(util) {
     var textures = {
         hole: new THREE.ImageUtils.loadTexture("assets/hole.png"),
         grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
         heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
     }
 
-    //var jsonLoader = new THREE.JSONLoader();
-    //jsonLoader.load('models/schuh.js', addModelToScene);
-        
+    var targetMeshes = [];
+
     var scene = new THREE.Scene();
 
     var WIDTH = 5;
     var HEIGHT = 5;
     var TileColors = [0xff0000,0x00ff00,0x0000ff]; 
-
-    function randomFromArray( array ) {
-        return array[ Math.floor( Math.random()*array.length) ];
-    }
 
     function localToModel(x,y,z) {
         return new THREE.Vector3(
@@ -51,7 +46,7 @@ require(['lib/three.min'], function() {
 
     function findUnlinkedTile() {
         while(true) {
-            var tile = randomFromArray(tiles);
+            var tile = util.randomFromArray(tiles);
             if( tile.linkedTo )
                 continue;
             else
@@ -66,6 +61,9 @@ require(['lib/three.min'], function() {
         tileB.linkedTo = tileA;
         tileA.mesh.material.map = textures.hole;
         tileB.mesh.material.map = textures.hole;
+
+        targetMeshes.push(tileA.mesh);
+        targetMeshes.push(tileB.mesh);
     }
 
     linkTwoTiles();
@@ -84,12 +82,6 @@ require(['lib/three.min'], function() {
     camera.up = new THREE.Vector3(0,1,0);
     camera.lookAt( new THREE.Vector3(0,0,0));
 
-    var geometry = new THREE.PlaneGeometry( 1,1 );
-    var material = new THREE.MeshBasicMaterial( { color: 0xffffff, wireframe: false } );
-    var mesh = new THREE.Mesh( geometry, material );
-
-    scene.add( mesh );
-
     tiles.forEach( function( tile ) {
         scene.add( tile.mesh );
     })
@@ -99,17 +91,37 @@ require(['lib/three.min'], function() {
 
     document.body.appendChild( renderer.domElement );
 
+
+    var mouse = {x:0,y:0};
+    function onDocumentMouseDown(e) {
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+
+        var vector = new THREE.Vector3( mouse.x, mouse.y, 1);
+        projector.unprojectVector(vector, camera);
+
+        var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+
+        var intersects = ray.intersectObjects( targetMeshes )
+        if( intersects.length > 0 ) {
+            console.log("intersection detected");
+        }
+    }
+
+    var projector = new THREE.Projector();
+    document.addEventListener('mousedown', onDocumentMouseDown, false);
+
     var theta = 0;
     function animate() {
         requestAnimationFrame( animate );
 
-        theta+= 0.005;
-        camera.position.z = Math.cos(theta)*0.005 + cameraCenter.z;
+        theta+= 0.05;
+        camera.position.z = Math.cos(theta)*0.05 + cameraCenter.z;
         camera.position.y = Math.cos(theta)*0.005 + cameraCenter.y;
         camera.position.x = Math.cos(theta)*0.005 + cameraCenter.x;
 
         renderer.render( scene, camera );
-
     }
 
     animate();
