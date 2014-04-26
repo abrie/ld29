@@ -1,5 +1,5 @@
 "use strict";
-require(['util','lib/three.min'], function(util) {
+require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var textures = {
         hole: new THREE.ImageUtils.loadTexture("assets/hole.png"),
         grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
@@ -199,10 +199,36 @@ require(['util','lib/three.min'], function(util) {
         if( intersects.length > 0 ) {
             intersects.forEach( function( intersected ) {
                 var tile = map.findTileByMesh( intersected.object );
-                heli_mesh.position = map.localToModel(tile.x,tile.y,0.05);
-                rotor_mesh.position = map.localToModel(tile.x,tile.y,0.2);
+                moveHeli( tile );
             })
         }
+    }
+
+    function moveHeli( tile ) {
+        var currentPosition = {
+            x: heli_mesh.position.x,
+            y: heli_mesh.position.y,
+        }
+
+        var modelCoordinates = map.localToModel(tile.x, tile.y, 0.05);
+        var targetPosition = {
+            x: modelCoordinates.x,
+            y: modelCoordinates.y,
+        }
+
+        var tween = new TWEEN.Tween( currentPosition )
+            .to( targetPosition, 500 )
+            .easing( TWEEN.Easing.Circular.InOut )
+            .onUpdate( function() {
+                heli_mesh.position.x = currentPosition.x;
+                heli_mesh.position.y = currentPosition.y;
+                heli_mesh.position.z = 0.05;
+
+                rotor_mesh.position.x = currentPosition.x;
+                rotor_mesh.position.y = currentPosition.y;
+                rotor_mesh.position.z = 0.15;
+            })
+            .start();
     }
 
     var projector = new THREE.Projector();
@@ -220,6 +246,7 @@ require(['util','lib/three.min'], function(util) {
         rotor_mesh.rotation.z += 1;
 
         renderer.render( scene, camera );
+        TWEEN.update();
     }
 
     animate();
