@@ -1,10 +1,13 @@
 "use strict";
 require(['lib/three.min'], function() {
-    var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 5 );
+    var camera = new THREE.PerspectiveCamera( 20, window.innerWidth / window.innerHeight, 1, 5 );
     camera.position.z = 2;
+    camera.position.y = -3;
+    camera.up = new THREE.Vector3(0,1,0);
+    camera.lookAt( new THREE.Vector3(0,0,0));
 
-    var geometry = new THREE.CubeGeometry( 1,1,1 );
-    var material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
+    var geometry = new THREE.PlaneGeometry( 1,1 );
+    var material = new THREE.MeshBasicMaterial( { color: 0xffffff, wireframe: false } );
     var mesh = new THREE.Mesh( geometry, material );
 
     var scene = new THREE.Scene();
@@ -18,8 +21,7 @@ require(['lib/three.min'], function() {
     function animate() {
         requestAnimationFrame( animate );
 
-        mesh.rotation.x += 0.01;
-        mesh.rotation.y += 0.02;
+        mesh.rotation.z += 0.005;
 
         renderer.render( scene, camera );
 
