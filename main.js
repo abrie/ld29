@@ -12,7 +12,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var container = new THREE.Object3D();
 
     var Map = function( width, height, Generator) {
-
         function localToModel(x,y,z) {
             return new THREE.Vector3(
                 -0.5+1/width*x+1/width/2,
@@ -192,11 +191,15 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
     var gophers = [];
-    map.getTilesWithGopher().forEach( function(tile) {
-        var gopher = new Gopher(tile);
-        gophers.push(gopher);
-        container.add( gopher.mesh );
-    })
+    function addGophersToContainer(theMap, theContainer) {
+        theMap.getTilesWithGopher().forEach( function(tile) {
+            var gopher = new Gopher(tile);
+            gophers.push(gopher);
+            theContainer.add( gopher.mesh );
+        });
+    }
+
+    addGophersToContainer(map, container);
 
     function onVacuumActivated() {
         if( heli.tile.linkedTo ) {
@@ -258,7 +261,51 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
     function onGopherGone() {
+        if( gophers.length === 0) {
+            proceedToNextLevel();
+        }
         console.log("gopher eliminated");
+    }
+
+    function proceedToNextLevel() {
+        var newMap = new Map(5, 5, Tile);
+        newMap.linkTwoTiles();
+        newMap.linkTwoTiles();
+        newMap.linkTwoTiles();
+        newMap.addGopher();
+        newMap.addGopher();
+
+        var offset = 1;
+        var newContainer = new THREE.Object3D();
+        newContainer.position.x = offset;
+        populateContainerWithTiles(newMap, newContainer)
+        addGophersToContainer(newMap, newContainer);
+        scene.add(newContainer);
+
+        var current = {
+            delta: 0,
+        }
+
+        var target = {
+           delta: offset, 
+        }
+
+        var tween = new TWEEN.Tween(current)
+            .to(target, 1000)
+            .easing(TWEEN.Easing.Elastic.InOut)
+            .onUpdate( function() {
+                container.position.x = -current.delta;
+                newContainer.position.x = offset-current.delta;
+            })
+            .onComplete( function() {
+                container.remove( heli.mesh );
+                scene.remove( container );
+                map = newMap;
+                container = newContainer;
+                container.add( heli.mesh );
+                moveHeli( map.getTile(0,0) );
+            });
+        tween.start();
     }
 
     var heliScale = 1.5;
@@ -377,9 +424,13 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     camera.up = new THREE.Vector3(0,1,0);
     camera.lookAt( new THREE.Vector3(0,0,0));
 
-    map.tiles.forEach( function( tile ) {
-        container.add( tile.mesh );
-    })
+    function populateContainerWithTiles(theMap, theContainer) {
+        theMap.tiles.forEach( function( tile ) {
+            theContainer.add( tile.mesh );
+        })
+    }
+
+    populateContainerWithTiles(map, container);
 
     function ShadowLight() {
         var light = new THREE.SpotLight( 0xFFFFFF, 1);
