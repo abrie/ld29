@@ -141,18 +141,97 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var gopherScale = 2;
     function GopherMesh() {
         var geometry = new THREE.PlaneGeometry(1/map.width/gopherScale,1/map.height/gopherScale);
-        var material = new THREE.MeshBasicMaterial( { map: textures.gopher, transparent:true, wireframe: false } );
+        var material = new THREE.MeshBasicMaterial( { map: textures.gopher, transparent:true, side: THREE.DoubleSide } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.rotation.x = Math.PI/2;
         mesh.receiveShadow = true;
         return mesh;
     }
 
+    var Gopher = function(tile) {
+        var mesh = new GopherMesh(); 
+        mesh.position = map.localToModel(tile.x, tile.y, 1/map.height/gopherScale/2);
+
+        var rotationRate = 0;
+        function incRotationRate(delta) {
+            rotationRate += delta;
+        }
+
+        function update() {
+            mesh.rotation.y += rotationRate;
+        }
+
+        return {
+            tile: tile,
+            mesh: mesh,
+            update: update,
+            incRotationRate: incRotationRate,
+        }
+    }
+
+    var gophers = [];
     map.getTilesWithGopher().forEach( function(tile) {
-        var gopher_mesh = new GopherMesh(); 
-        gopher_mesh.position = map.localToModel(tile.x, tile.y, 1/map.height/gopherScale/2);
-        scene.add( gopher_mesh );
+        var gopher = new Gopher(tile);
+        gophers.push(gopher);
+        scene.add( gopher.mesh );
     })
+
+    function onVacuumActivated() {
+        if( heli.tile.linkedTo ) {
+            if( heli.tile.hasGopher ) {
+                action_die();
+            }
+            else if( heli.tile.linkedTo.hasGopher ) {
+                action_removeGopher( heli.tile.linkedTo );
+            }
+            else {
+                action_nothing();
+            }
+        }
+    }
+
+    function action_die() {
+        console.log("die");
+    }
+
+    function action_removeGopher(tile) {
+        var contained = gophers.filter( function(g) {
+            return g.tile === tile;
+        });
+
+        var gopher = contained[0];
+
+            var currentState = {
+                z: gopher.mesh.position.z,
+            }
+
+            var targetState = {
+                z: -1/map.width/gopherScale/2,
+            }
+
+            var tween = new TWEEN.Tween( currentState )
+            .to( targetState, 2000 )
+            .easing( TWEEN.Easing.Circular.In )
+            .onUpdate( function() {
+                gopher.mesh.position.z = currentState.z; 
+                gopher.incRotationRate(0.01);
+            })
+            .onComplete( function() {
+                scene.remove( gopher.mesh )
+                gophers = gophers.filter( function(g) { return g !== gopher; });
+                tile.hasGopher = false;
+                onGopherGone();
+            })
+
+            tween.start();
+    }
+
+    function action_nothing() {
+    }
+
+    function onGopherGone() {
+        console.log("gopher eliminated");
+    }
 
     var heliScale = 1.5;
     function HeliMesh() {
@@ -172,7 +251,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         mesh.castShadow = true;
         return mesh;
     }
-
 
     var grabberScale = 25;
     function HeliGrabberMesh() {
@@ -206,6 +284,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
 
         var vacuumTween = undefined;
+
         function activateVacuum() {
             var currentState = {
                 r: heli_grabberMesh.rotation.y,
@@ -223,7 +302,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 //object.rotation.y = currentState.r
             })
             .onComplete( function() {
-                console.log("rotation complete");
+                onVacuumActivated();
             })
 
             vacuumTween.start();
@@ -243,7 +322,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             .easing( TWEEN.Easing.Circular.InOut )
             .onUpdate( function() {
                 heli_grabberMesh.rotation.y = currentState.r
-                //object.rotation.y = currentState.r
             })
             .onComplete( function() {
                 console.log("rotation complete");
@@ -256,6 +334,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             activateVacuum:activateVacuum,
             deactivateVacuum:deactivateVacuum,
             update: update,
+            tile: undefined,
             mesh: object,
         }
     }
@@ -326,6 +405,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var heliTween = undefined;
     function moveHeli( tile ) {
+        heli.tile = tile;
         var currentPosition = {
             x: heli.mesh.position.x,
             y: heli.mesh.position.y,
@@ -377,6 +457,9 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         camera.position.x = Math.cos(theta)*0.005 + cameraCenter.x;
 
         heli.update();
+        gophers.forEach( function(gopher) {
+            gopher.update();
+        })
 
         renderer.render( scene, camera );
         TWEEN.update();
