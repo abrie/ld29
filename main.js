@@ -33,19 +33,17 @@ require(['util','lib/three.min'], function(util) {
             }
         }
 
-        function findUnlinkedTile() {
-            while(true) {
-                var tile = util.randomFromArray(tiles);
-                if( tile.linkedTo )
-                    continue;
-                else
-                    return tile;
-            }
+        function getUnlinkedTiles() {
+            return tiles.filter( function(tile){
+                return tile.linkedTo === undefined;
+            });
         }
 
         function linkTwoTiles() {
-            var tileA = findUnlinkedTile();
-            var tileB = findUnlinkedTile();
+            var unlinkedTiles = getUnlinkedTiles();
+            util.shuffleArray( unlinkedTiles );
+            var tileA = unlinkedTiles.pop(); 
+            var tileB = unlinkedTiles.pop();
 
             tileA.linkedTo = tileB;
             tileB.linkedTo = tileA;
@@ -55,24 +53,20 @@ require(['util','lib/three.min'], function(util) {
 
             targetMeshes.push(tileA.mesh);
             targetMeshes.push(tileB.mesh);
-
-            tilesWithGopherMounds.push(tileA);
-            tilesWithGopherMounds.push(tileB);
         }
 
-        function getUnoccupiedGopherMound() {
-            while(true) {
-                var tile = util.randomFromArray(tilesWithGopherMounds);
-                if( tile.hasGopher )
-                    continue;
-                else
-                    return tile;
-            }
+        function getUnoccupiedGopherMounds() {
+            return tiles.filter( function(tile) {
+                return (tile.linkedTo !== undefined && tile.hasGopher !== true &&
+                   tile.linkedTo.hasGopher !== true );
+            })
         }
 
         function addGopher() {
-            var gopherMound = getUnoccupiedGopherMound();
-            gopherMound.hasGopher = true;
+            var available = getUnoccupiedGopherMounds();
+            if( available.length > 0) {
+                util.randomFromArray(available).hasGopher = true;
+            }
         }
 
         function getTilesWithGopher() {
@@ -88,7 +82,6 @@ require(['util','lib/three.min'], function(util) {
             height:height,
             localToModel:localToModel,
             targetMeshes:targetMeshes,
-            findUnlinkedTile: findUnlinkedTile,
             tilesWithGopherMounds: tilesWithGopherMounds,
             linkTwoTiles: linkTwoTiles,
             addGopher: addGopher,
@@ -115,6 +108,9 @@ require(['util','lib/three.min'], function(util) {
 
     var map = new Map(5, 5, Tile);
     map.linkTwoTiles();
+    map.linkTwoTiles();
+    map.linkTwoTiles();
+    map.addGopher();
     map.addGopher();
 
     function RotorMesh() {
