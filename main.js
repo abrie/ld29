@@ -147,8 +147,9 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     rotor_mesh.position = map.localToModel(0,0,0.2);
     scene.add( rotor_mesh );
 
+    var gopherScale = 2;
     function GopherMesh() {
-        var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height);
+        var geometry = new THREE.PlaneGeometry(1/map.width/gopherScale,1/map.height/gopherScale);
         var material = new THREE.MeshBasicMaterial( { map: textures.gopher, transparent:true, wireframe: false } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.rotation.x = Math.PI/2;
@@ -157,12 +158,13 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     map.getTilesWithGopher().forEach( function(tile) {
         var gopher_mesh = new GopherMesh(); 
-        gopher_mesh.position = map.localToModel(tile.x, tile.y, 1/map.height/2);
+        gopher_mesh.position = map.localToModel(tile.x, tile.y, 1/map.height/gopherScale/2);
         scene.add( gopher_mesh );
     })
 
+    var heliScale = 1.5;
     function HeliMesh() {
-        var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height);
+        var geometry = new THREE.PlaneGeometry(1/map.width/heliScale,1/map.height/heliScale);
         var material = new THREE.MeshBasicMaterial( { map: textures.heli, transparent:true, wireframe: false } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.rotation.x = Math.PI/2;
@@ -174,7 +176,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     scene.add( heli_mesh );
 
     var camera = new THREE.PerspectiveCamera( 15, window.innerWidth / window.innerHeight, 1, 10000 );
-    var cameraCenter = {x:0, y:-3, z:2};
+    var cameraCenter = {x:0, y:-2.5, z:1.0};
     camera.position.z = cameraCenter.z;
     camera.position.y = cameraCenter.y;
     camera.up = new THREE.Vector3(0,1,0);
@@ -228,11 +230,11 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             .onUpdate( function() {
                 heli_mesh.position.x = currentPosition.x;
                 heli_mesh.position.y = currentPosition.y;
-                heli_mesh.position.z = 0.05;
+                heli_mesh.position.z = 1/map.height/heliScale;
 
                 rotor_mesh.position.x = currentPosition.x;
                 rotor_mesh.position.y = currentPosition.y;
-                rotor_mesh.position.z = 0.15;
+                rotor_mesh.position.z = 1/map.height/heliScale*1.5;
             })
             .onComplete( function() {
                 onHeliMoved(tile); 
