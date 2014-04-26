@@ -1,0 +1,22 @@
+@font-face {
+    font-family: 'game';
+    src: url('assets/Volter__28Goldfish_29.ttf');
+}
+
+body {
+    margin:0;
+    padding:0;
+    font-family: 'game', serif;
+}
+
+#hud {
+    color: white;
+    font-size: 13pt;
+    font-family: 'game', serif;
+    position: absolute;
+    top: 0;
+    width: 400;
+    height: 400;
+    z-index: 3;
+    display: block;
+}
