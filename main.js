@@ -19,85 +19,103 @@ require(['util','lib/three.min'], function(util) {
             ); 
         }
 
-        var result = {
-            width:width,
-            height:height,
-            localToModel:localToModel,
-            targetMeshes:[],
-            tiles: [],
-        }
-
+        var tiles = [];
+        var targetMeshes = [];
+        var tilesWithGopherMounds = [];
 
         function populate() {
             for( var x = 0; x < width; x++ ) {
                 for( var y = 0; y < height; y++ ) {
                     var tile = new Generator(x, y, width, height)
                     tile.mesh.position = localToModel(x, y, 0.005);
-                    result.tiles.push(tile);
+                    tiles.push(tile);
                 }
             }
         }
 
+        function findUnlinkedTile() {
+            while(true) {
+                var tile = util.randomFromArray(tiles);
+                if( tile.linkedTo )
+                    continue;
+                else
+                    return tile;
+            }
+        }
+
+        function linkTwoTiles() {
+            var tileA = findUnlinkedTile();
+            var tileB = findUnlinkedTile();
+
+            tileA.linkedTo = tileB;
+            tileB.linkedTo = tileA;
+
+            tileA.mesh.material.map = textures.hole;
+            tileB.mesh.material.map = textures.hole;
+
+            targetMeshes.push(tileA.mesh);
+            targetMeshes.push(tileB.mesh);
+
+            tilesWithGopherMounds.push(tileA);
+            tilesWithGopherMounds.push(tileB);
+        }
+
+        function getUnoccupiedGopherMound() {
+            while(true) {
+                var tile = util.randomFromArray(tilesWithGopherMounds);
+                if( tile.hasGopher )
+                    continue;
+                else
+                    return tile;
+            }
+        }
+
+        function addGopher() {
+            var gopherMound = getUnoccupiedGopherMound();
+            gopherMound.hasGopher = true;
+        }
+
+        function getTilesWithGopher() {
+            return tiles.filter( function(tile) {
+                return tile.hasGopher;
+            });
+        }
+
         populate();
 
-        return result;
+        return {
+            width:width,
+            height:height,
+            localToModel:localToModel,
+            targetMeshes:targetMeshes,
+            findUnlinkedTile: findUnlinkedTile,
+            tilesWithGopherMounds: tilesWithGopherMounds,
+            linkTwoTiles: linkTwoTiles,
+            addGopher: addGopher,
+            getTilesWithGopher: getTilesWithGopher,
+            tiles: tiles,
+        }
     }
 
-
-    var Tile = function(x, y, mapWidth, mapHeight) {
+    var TileMesh = function(mapWidth, mapHeight) {
         var geometry = new THREE.PlaneGeometry(1/mapWidth,1/mapHeight);
         var material = new THREE.MeshBasicMaterial( { map: textures.grass, wireframe: false } );
         var mesh = new THREE.Mesh( geometry, material );
+        return mesh;
+    }
 
+    var Tile = function(x, y, mapWidth, mapHeight) {
         return {
             x:x,
             y:y,
-            mesh:mesh,
+            mesh: new TileMesh(mapWidth, mapHeight),
             linkedTo:undefined,
         }
     }
 
-    var map = new Map(5,5,Tile);
-
-    function findUnlinkedTile() {
-        while(true) {
-            var tile = util.randomFromArray(map.tiles);
-            if( tile.linkedTo )
-                continue;
-            else
-                return tile;
-        }
-    }
-
-    var gopherMounds = [];
-    function linkTwoTiles() {
-        var tileA = findUnlinkedTile();
-        var tileB = findUnlinkedTile();
-        tileA.linkedTo = tileB;
-        tileB.linkedTo = tileA;
-        tileA.mesh.material.map = textures.hole;
-        tileB.mesh.material.map = textures.hole;
-
-        map.targetMeshes.push(tileA.mesh);
-        map.targetMeshes.push(tileB.mesh);
-
-        gopherMounds.push(tileA);
-        gopherMounds.push(tileB);
-    }
-
-    function getUnoccupiedGopherMound() {
-        while(true) {
-            var tile = util.randomFromArray(gopherMounds);
-            if( tile.hasGopher )
-                continue;
-            else
-                return tile;
-        }
-    }
-
-    linkTwoTiles();
-    var gopherMound = getUnoccupiedGopherMound();
-    gopherMound.hasGopher = true;
+    var map = new Map(5, 5, Tile);
+    map.linkTwoTiles();
+    map.addGopher();
 
     function RotorMesh() {
         var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height/15);
@@ -118,9 +136,11 @@ require(['util','lib/three.min'], function(util) {
         return mesh;
     }
 
-    var gopher_mesh = new GopherMesh(); 
-    gopher_mesh.position = map.localToModel(gopherMound.x,gopherMound.y,0.0);
-    scene.add( gopher_mesh );
+    map.getTilesWithGopher().forEach( function(tile) {
+        var gopher_mesh = new GopherMesh(); 
+        gopher_mesh.position = map.localToModel(tile.x, tile.y, 0.0);
+        scene.add( gopher_mesh );
+    })
 
     function HeliMesh() {
         var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height);
