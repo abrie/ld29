@@ -7,27 +7,47 @@ require(['util','lib/three.min'], function(util) {
         gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png")
     }
 
-    var targetMeshes = [];
-
     var scene = new THREE.Scene();
 
-    var MAP_WIDTH = 5;
-    var MAP_HEIGHT = 5;
-    var TileColors = [0xff0000,0x00ff00,0x0000ff]; 
+    var Map = function( width, height, Generator) {
 
-    function localToModel(x,y,z) {
-        return new THREE.Vector3(
-            -0.5+1/MAP_WIDTH*x+1/MAP_WIDTH/2,
-            -0.5+1/MAP_HEIGHT*y+1/MAP_WIDTH/2,
-            z
-        ); 
+        function localToModel(x,y,z) {
+            return new THREE.Vector3(
+                -0.5+1/width*x+1/width/2,
+                -0.5+1/height*y+1/height/2,
+                z
+            ); 
+        }
+
+        var result = {
+            width:width,
+            height:height,
+            localToModel:localToModel,
+            targetMeshes:[],
+            tiles: [],
+        }
+
+
+        function populate() {
+            for( var x = 0; x < width; x++ ) {
+                for( var y = 0; y < height; y++ ) {
+                    var tile = new Generator(x, y, width, height)
+                    tile.mesh.position = localToModel(x, y, 0.005);
+                    result.tiles.push(tile);
+                }
+            }
+        }
+
+        populate();
+
+        return result;
     }
 
-    var Tile = function(x,y,z) {
-        var geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT);
+
+    var Tile = function(x, y, mapWidth, mapHeight) {
+        var geometry = new THREE.PlaneGeometry(1/mapWidth,1/mapHeight);
         var material = new THREE.MeshBasicMaterial( { map: textures.grass, wireframe: false } );
         var mesh = new THREE.Mesh( geometry, material );
-        mesh.position = localToModel(x, y, 0.005);
 
         return {
             x:x,
@@ -37,17 +57,11 @@ require(['util','lib/three.min'], function(util) {
         }
     }
 
-    var tiles = [];
-    for( var x = 0; x < MAP_WIDTH; x++ ) {
-        for( var y = 0; y < MAP_HEIGHT; y++ ) {
-            var tile = new Tile(x,y,0.005)
-            tiles.push(tile);
-        }
-    }
+    var map = new Map(5,5,Tile);
 
     function findUnlinkedTile() {
         while(true) {
-            var tile = util.randomFromArray(tiles);
+            var tile = util.randomFromArray(map.tiles);
             if( tile.linkedTo )
                 continue;
             else
@@ -64,8 +78,8 @@ require(['util','lib/three.min'], function(util) {
         tileA.mesh.material.map = textures.hole;
         tileB.mesh.material.map = textures.hole;
 
-        targetMeshes.push(tileA.mesh);
-        targetMeshes.push(tileB.mesh);
+        map.targetMeshes.push(tileA.mesh);
+        map.targetMeshes.push(tileB.mesh);
 
         gopherMounds.push(tileA);
         gopherMounds.push(tileB);
@@ -86,18 +100,18 @@ require(['util','lib/three.min'], function(util) {
     gopherMound.hasGopher = true;
 
     function RotorMesh() {
-        var geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT/15);
+        var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height/15);
         var material = new THREE.MeshBasicMaterial( {color:0xFF00FF, wireframe: false} ); 
         var mesh = new THREE.Mesh( geometry, material );
         return mesh;
     }
 
     var rotor_mesh = new RotorMesh();
-    rotor_mesh.position = localToModel(0,0,0.2);
+    rotor_mesh.position = map.localToModel(0,0,0.2);
     scene.add( rotor_mesh );
 
     function GopherMesh() {
-        var geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT);
+        var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height);
         var material = new THREE.MeshBasicMaterial( { map: textures.gopher, transparent:true, wireframe: false } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.rotation.x = Math.PI/2;
@@ -105,11 +119,11 @@ require(['util','lib/three.min'], function(util) {
     }
 
     var gopher_mesh = new GopherMesh(); 
-    gopher_mesh.position = localToModel(gopherMound.x,gopherMound.y,0.0);
+    gopher_mesh.position = map.localToModel(gopherMound.x,gopherMound.y,0.0);
     scene.add( gopher_mesh );
 
     function HeliMesh() {
-        var geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT);
+        var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height);
         var material = new THREE.MeshBasicMaterial( { map: textures.heli, transparent:true, wireframe: false } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.rotation.x = Math.PI/2;
@@ -117,7 +131,7 @@ require(['util','lib/three.min'], function(util) {
     }
 
     var heli_mesh = new HeliMesh();
-    heli_mesh.position = localToModel(0,0,0.1);
+    heli_mesh.position = map.localToModel(0,0,0.1);
     scene.add( heli_mesh );
 
     var camera = new THREE.PerspectiveCamera( 15, window.innerWidth / window.innerHeight, 1, 10000 );
@@ -127,7 +141,7 @@ require(['util','lib/three.min'], function(util) {
     camera.up = new THREE.Vector3(0,1,0);
     camera.lookAt( new THREE.Vector3(0,0,0));
 
-    tiles.forEach( function( tile ) {
+    map.tiles.forEach( function( tile ) {
         scene.add( tile.mesh );
     })
 
@@ -148,7 +162,7 @@ require(['util','lib/three.min'], function(util) {
 
         var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
 
-        var intersects = ray.intersectObjects( targetMeshes )
+        var intersects = ray.intersectObjects( map.targetMeshes )
         if( intersects.length > 0 ) {
             console.log("intersection detected");
         }
