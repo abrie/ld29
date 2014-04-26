@@ -85,23 +85,38 @@ require(['util','lib/three.min'], function(util) {
     var gopherMound = getUnoccupiedGopherMound();
     gopherMound.hasGopher = true;
 
-    var rotor_geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT/15);
-    var rotor_material = new THREE.MeshBasicMaterial( {color:0xFF00FF, wireframe: false} ); 
-    var rotor_mesh = new THREE.Mesh( rotor_geometry, rotor_material );
+    function RotorMesh() {
+        var geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT/15);
+        var material = new THREE.MeshBasicMaterial( {color:0xFF00FF, wireframe: false} ); 
+        var mesh = new THREE.Mesh( geometry, material );
+        return mesh;
+    }
+
+    var rotor_mesh = new RotorMesh();
     rotor_mesh.position = localToModel(0,0,0.2);
     scene.add( rotor_mesh );
 
-    var gopher_geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT);
-    var gopher_material = new THREE.MeshBasicMaterial( { map: textures.gopher, transparent:true, wireframe: false } );
-    var gopher_mesh = new THREE.Mesh( gopher_geometry, gopher_material );
-    gopher_mesh.rotation.x = Math.PI/2;
+    function GopherMesh() {
+        var geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT);
+        var material = new THREE.MeshBasicMaterial( { map: textures.gopher, transparent:true, wireframe: false } );
+        var mesh = new THREE.Mesh( geometry, material );
+        mesh.rotation.x = Math.PI/2;
+        return mesh;
+    }
+
+    var gopher_mesh = new GopherMesh(); 
     gopher_mesh.position = localToModel(gopherMound.x,gopherMound.y,0.0);
     scene.add( gopher_mesh );
 
-    var heli_geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT);
-    var heli_material = new THREE.MeshBasicMaterial( { map: textures.heli, transparent:true, wireframe: false } );
-    var heli_mesh = new THREE.Mesh( heli_geometry, heli_material );
-    heli_mesh.rotation.x = Math.PI/2;
+    function HeliMesh() {
+        var geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT);
+        var material = new THREE.MeshBasicMaterial( { map: textures.heli, transparent:true, wireframe: false } );
+        var mesh = new THREE.Mesh( geometry, material );
+        mesh.rotation.x = Math.PI/2;
+        return mesh;
+    }
+
+    var heli_mesh = new HeliMesh();
     heli_mesh.position = localToModel(0,0,0.1);
     scene.add( heli_mesh );
 
