@@ -92,6 +92,10 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             });
         }
 
+        function getTile(x,y) {
+            return tiles[y*width+x];
+        }
+
         populate();
 
         return {
@@ -104,6 +108,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             addGopher: addGopher,
             getTilesWithGopher: getTilesWithGopher,
             findTileByMesh: findTileByMesh,
+            getTile: getTile,
             tiles: tiles,
         }
     }
@@ -233,6 +238,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var projector = new THREE.Projector();
     document.addEventListener('mousedown', onDocumentMouseDown, false);
+
+    moveHeli( map.getTile(0,0) );
 
     var theta = 0;
     function animate() {
