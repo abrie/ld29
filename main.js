@@ -33,6 +33,17 @@ require(['util','lib/three.min'], function(util) {
             }
         }
 
+        function findTileByMesh(mesh) {
+            var result = tiles.filter( function(tile) { 
+                return tile.mesh === mesh;
+            });
+            if( result.length > 1) {
+                console.log("warning: multiple tiles contain this mesh.");
+            }
+
+            return result[0];
+        }
+
         function getUnlinkedTiles() {
             return tiles.filter( function(tile){
                 return tile.linkedTo === undefined;
@@ -86,6 +97,7 @@ require(['util','lib/three.min'], function(util) {
             linkTwoTiles: linkTwoTiles,
             addGopher: addGopher,
             getTilesWithGopher: getTilesWithGopher,
+            findTileByMesh: findTileByMesh,
             tiles: tiles,
         }
     }
@@ -172,7 +184,6 @@ require(['util','lib/three.min'], function(util) {
         mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
-
         var vector = new THREE.Vector3( mouse.x, mouse.y, 1);
         projector.unprojectVector(vector, camera);
 
@@ -180,7 +191,10 @@ require(['util','lib/three.min'], function(util) {
 
         var intersects = ray.intersectObjects( map.targetMeshes )
         if( intersects.length > 0 ) {
-            console.log("intersection detected");
+            intersects.forEach( function( intersected ) {
+                var tile = map.findTileByMesh( intersected.object );
+                console.log(tile);
+            })
         }
     }
 
