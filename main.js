@@ -117,7 +117,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         var geometry = new THREE.PlaneGeometry(1/mapWidth,1/mapHeight);
         var material = new THREE.MeshLambertMaterial( { map: textures.grass, wireframe: false } );
         var mesh = new THREE.Mesh( geometry, material );
-        mesh.castShadow = true;
         mesh.receiveShadow = true;
         return mesh;
     }
@@ -138,18 +137,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     map.addGopher();
     map.addGopher();
 
-    function RotorMesh() {
-        var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height/15);
-        var material = new THREE.MeshLambertMaterial( {color:0xFF00FF, side:THREE.DoubleSide} ); 
-        var mesh = new THREE.Mesh( geometry, material );
-        mesh.receiveShadow = true;
-        mesh.castShadow = true;
-        return mesh;
-    }
-
-    var rotor_mesh = new RotorMesh();
-    rotor_mesh.position = map.localToModel(0,0,0.2);
-    scene.add( rotor_mesh );
 
     var gopherScale = 2;
     function GopherMesh() {
@@ -158,7 +145,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         var mesh = new THREE.Mesh( geometry, material );
         mesh.rotation.x = Math.PI/2;
         mesh.receiveShadow = true;
-        mesh.castShadow = true;
         return mesh;
     }
 
@@ -179,9 +165,50 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         return mesh;
     }
 
-    var heli_mesh = new HeliMesh();
-    heli_mesh.position = map.localToModel(0,0,0.1);
-    scene.add( heli_mesh );
+    function RotorMesh() {
+        var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height/15);
+        var material = new THREE.MeshLambertMaterial( {color:0xFF00FF, side:THREE.DoubleSide} ); 
+        var mesh = new THREE.Mesh( geometry, material );
+        mesh.castShadow = true;
+        return mesh;
+    }
+
+
+    var grabberScale = 15;
+    function HeliGrabberMesh() {
+        var geometry = new THREE.CylinderGeometry(1/map.width/grabberScale,1/map.width/grabberScale,1/map.width/grabberScale);
+        var material = new THREE.MeshPhongMaterial( { color:0xFFFFFF } );
+        var mesh = new THREE.Mesh( geometry, material );
+        return mesh;
+    }
+
+    var Heli = function() {
+        var object = new THREE.Object3D();
+
+        var heli_mesh = new HeliMesh();
+        heli_mesh.position = new THREE.Vector3(0,0,0);
+        object.add( heli_mesh );
+
+        var rotor_mesh = new RotorMesh();
+        rotor_mesh.position = new THREE.Vector3(-0.003,0,1/map.width/3.0);
+        object.add( rotor_mesh );
+
+        var heli_grabberMesh = new HeliGrabberMesh();
+        heli_grabberMesh.position = new THREE.Vector3( 0,0,0 );
+        object.add( heli_grabberMesh )
+
+        function update() {
+            rotor_mesh.rotation.z += 1.0;
+        }
+
+        return {
+            update: update,
+            mesh: object,
+        }
+    }
+
+    var heli = new Heli();
+    scene.add( heli.mesh );
 
     var camera = new THREE.PerspectiveCamera( 15, window.innerWidth / window.innerHeight, 1, 10000 );
     var cameraCenter = {x:0, y:-3.0, z:1.0};
@@ -194,10 +221,33 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         scene.add( tile.mesh );
     })
 
+    function ShadowLight() {
+        var light = new THREE.SpotLight( 0xFFFFFF, 1);
+        //sun.shadowCameraVisible = true;
+        light.shadowMapWidth = 128;
+        light.shadowMapHeight = 128;
+        var d = 0.1;
+        light.shadowCameraLeft = -d;
+        light.shadowCameraRight = d;
+        light.shadowCameraTop = d;
+        light.shadowCameraBottom = -d;
+        light.shadowCameraNear = 1.5; 
+        light.shadowCameraFar = 2.1;
+        light.shadowCameraFov = 30;
+        light.shadowDarkness = 0.25;
+        light.castShadow = true;
+
+        return light;
+    }
+
+    var sun = new ShadowLight();
+    sun.position = new THREE.Vector3(0,0,2);
+    scene.add( sun );
+
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.shadowMapEnabled = true;
-    //renderer.shadowMapType = THREE.PCFShadowMap;
+    renderer.shadowMapType = THREE.PCFShadowMap;
     renderer.shadowMapSoft = true;
 
     document.body.appendChild( renderer.domElement );
@@ -224,8 +274,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var heliTween = undefined;
     function moveHeli( tile ) {
         var currentPosition = {
-            x: heli_mesh.position.x,
-            y: heli_mesh.position.y,
+            x: heli.mesh.position.x,
+            y: heli.mesh.position.y,
         }
 
         var modelCoordinates = map.localToModel(tile.x, tile.y, 0.05);
@@ -238,13 +288,9 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             .to( targetPosition, 500 )
             .easing( TWEEN.Easing.Circular.InOut )
             .onUpdate( function() {
-                heli_mesh.position.x = currentPosition.x;
-                heli_mesh.position.y = currentPosition.y;
-                heli_mesh.position.z = 1/map.height/heliScale;
-
-                rotor_mesh.position.x = currentPosition.x;
-                rotor_mesh.position.y = currentPosition.y;
-                rotor_mesh.position.z = 1/map.height/heliScale*1.5;
+                heli.mesh.position.x = currentPosition.x;
+                heli.mesh.position.y = currentPosition.y;
+                heli.mesh.position.z = 1/map.height/heliScale;
             })
             .onComplete( function() {
                 onHeliMoved(tile); 
@@ -271,28 +317,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         camera.position.y = Math.sin(theta)*0.005 + cameraCenter.y;
         camera.position.x = Math.cos(theta)*0.005 + cameraCenter.x;
 
-        rotor_mesh.rotation.z += 1.0;
+        heli.update();
 
         renderer.render( scene, camera );
         TWEEN.update();
     }
 
-    var sun = new THREE.SpotLight( 0xFFFFFF, 1);
-    sun.position = new THREE.Vector3(0,0,2);
-    //sun.shadowCameraVisible = true;
-    sun.shadowMapWidth = 1024;
-    sun.shadowMapHeight = 1024;
-    var d = 0.1;
-    sun.shadowCameraLeft = -d;
-    sun.shadowCameraRight = d;
-    sun.shadowCameraTop = d;
-    sun.shadowCameraBottom = -d;
-    sun.shadowCameraNear = 1.5; 
-    sun.shadowCameraFar = 2.1;
-    sun.shadowCameraFov = 30;
-    sun.shadowDarkness = 0.5;
-    sun.castShadow = true;
-    scene.add( sun );
 
     animate();
 });
