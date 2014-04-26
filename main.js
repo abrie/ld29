@@ -157,7 +157,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     map.getTilesWithGopher().forEach( function(tile) {
         var gopher_mesh = new GopherMesh(); 
-        gopher_mesh.position = map.localToModel(tile.x, tile.y, 0.0);
+        gopher_mesh.position = map.localToModel(tile.x, tile.y, 1/map.height/2);
         scene.add( gopher_mesh );
     })
 
@@ -209,6 +209,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
     }
 
+    var heliTween = undefined;
     function moveHeli( tile ) {
         var currentPosition = {
             x: heli_mesh.position.x,
@@ -221,7 +222,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             y: modelCoordinates.y,
         }
 
-        var tween = new TWEEN.Tween( currentPosition )
+        heliTween = new TWEEN.Tween( currentPosition )
             .to( targetPosition, 500 )
             .easing( TWEEN.Easing.Circular.InOut )
             .onUpdate( function() {
@@ -233,7 +234,15 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 rotor_mesh.position.y = currentPosition.y;
                 rotor_mesh.position.z = 0.15;
             })
-            .start();
+            .onComplete( function() {
+                onHeliMoved(tile); 
+            })
+
+        heliTween.start();
+    }
+
+    function onHeliMoved( tile ) {
+        console.log("Heli moved", tile);
     }
 
     var projector = new THREE.Projector();
