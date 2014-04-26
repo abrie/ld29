@@ -4,10 +4,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         hole: new THREE.ImageUtils.loadTexture("assets/hole.png"),
         grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
         heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
-        gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png")
+        gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png"),
+        peekbelow: new THREE.ImageUtils.loadTexture("assets/peekbelow.png")
     }
 
     var scene = new THREE.Scene();
+    var container = new THREE.Object3D();
 
     var Map = function( width, height, Generator) {
 
@@ -113,9 +115,24 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
     }
 
+    var ButtonMesh = function(map) {
+        var geometry = new THREE.PlaneGeometry(0.10, 0.05);
+        var material = new THREE.MeshBasicMaterial( { map:map } );
+        var mesh = new THREE.Mesh( geometry, material );
+        mesh.rotation.x = Math.PI/2;
+        return mesh;
+    }
+
+    var buttons = [];
+    var peekButton = new ButtonMesh(textures.peekbelow);
+    peekButton.position.x = -0.5;
+    peekButton.position.y = -0.7;
+    buttons.push(peekButton);
+    scene.add( peekButton )
+
     var TileMesh = function(mapWidth, mapHeight) {
         var geometry = new THREE.PlaneGeometry(1/mapWidth,1/mapHeight);
-        var material = new THREE.MeshLambertMaterial( { map: textures.grass, wireframe: false } );
+        var material = new THREE.MeshLambertMaterial( { map: textures.grass, side: THREE.DoubleSide } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.receiveShadow = true;
         return mesh;
@@ -136,7 +153,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     map.linkTwoTiles();
     map.addGopher();
     map.addGopher();
-
 
     var gopherScale = 2;
     function GopherMesh() {
@@ -179,7 +195,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     map.getTilesWithGopher().forEach( function(tile) {
         var gopher = new Gopher(tile);
         gophers.push(gopher);
-        scene.add( gopher.mesh );
+        container.add( gopher.mesh );
     })
 
     function onVacuumActivated() {
@@ -352,7 +368,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
     var heli = new Heli();
-    scene.add( heli.mesh );
+    container.add( heli.mesh );
 
     var camera = new THREE.PerspectiveCamera( 15, window.innerWidth / window.innerHeight, 1, 10000 );
     var cameraCenter = {x:0, y:-3.0, z:1.0};
@@ -362,7 +378,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     camera.lookAt( new THREE.Vector3(0,0,0));
 
     map.tiles.forEach( function( tile ) {
-        scene.add( tile.mesh );
+        container.add( tile.mesh );
     })
 
     function ShadowLight() {
@@ -387,6 +403,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var sun = new ShadowLight();
     sun.position = new THREE.Vector3(0,0,2);
     scene.add( sun );
+    scene.add( container );
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize( window.innerWidth, window.innerHeight );
@@ -409,6 +426,11 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         projector.unprojectVector(vector, camera);
 
         var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+
+        var controlsIntersection = ray.intersectObjects( buttons );
+        if( controlsIntersection.length > 0 ) {
+           peekBelowTheSurface(); 
+        }
 
         var intersects = ray.intersectObjects( map.targetMeshes )
         if( intersects.length > 0 ) {
@@ -456,6 +478,26 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     function onHeliMoved( tile ) {
         console.log("Heli moved", tile);
+    }
+
+    function peekBelowTheSurface() {
+        var current = {
+            r: 0,
+        };
+
+        var target = {
+            r: -Math.PI*2,
+        }
+
+        var tween = new TWEEN.Tween( current )
+            .to( target, 2000 )
+            .easing( TWEEN.Easing.Back.Out )
+            .onUpdate( function() {
+                container.rotation.x = current.r;
+            })
+            .yoyo();
+
+        tween.start();
     }
 
     var projector = new THREE.Projector();
