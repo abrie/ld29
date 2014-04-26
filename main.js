@@ -174,11 +174,15 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
 
-    var grabberScale = 15;
+    var grabberScale = 25;
     function HeliGrabberMesh() {
-        var geometry = new THREE.CylinderGeometry(1/map.width/grabberScale,1/map.width/grabberScale,1/map.width/grabberScale);
+        var length = 1/map.width/grabberScale*5;
+        var geometry = new THREE.CylinderGeometry(1/map.width/grabberScale,1/map.width/grabberScale,length);
+        geometry.applyMatrix( new THREE.Matrix4().makeTranslation(0, -length/2, 0) );
         var material = new THREE.MeshPhongMaterial( { color:0xFFFFFF } );
         var mesh = new THREE.Mesh( geometry, material );
+        mesh.rotation.z = Math.PI/2;
+
         return mesh;
     }
 
@@ -190,18 +194,67 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         object.add( heli_mesh );
 
         var rotor_mesh = new RotorMesh();
-        rotor_mesh.position = new THREE.Vector3(-0.003,0,1/map.width/3.0);
+        rotor_mesh.position = new THREE.Vector3(-0.003,0,1/map.width/3.3);
         object.add( rotor_mesh );
 
         var heli_grabberMesh = new HeliGrabberMesh();
-        heli_grabberMesh.position = new THREE.Vector3( 0,0,0 );
+        heli_grabberMesh.position = new THREE.Vector3( 0,0,1/map.width/8.0 );
         object.add( heli_grabberMesh )
 
         function update() {
             rotor_mesh.rotation.z += 1.0;
         }
 
+        var vacuumTween = undefined;
+        function activateVacuum() {
+            var currentState = {
+                r: heli_grabberMesh.rotation.y,
+            }
+
+            var targetState = {
+                r: Math.PI/2,
+            }
+
+            vacuumTween = new TWEEN.Tween( currentState )
+            .to( targetState, 250 )
+            .easing( TWEEN.Easing.Circular.InOut )
+            .onUpdate( function() {
+                heli_grabberMesh.rotation.y = currentState.r
+                //object.rotation.y = currentState.r
+            })
+            .onComplete( function() {
+                console.log("rotation complete");
+            })
+
+            vacuumTween.start();
+        }
+
+        function deactivateVacuum() {
+            var currentState = {
+                r: heli_grabberMesh.rotation.y,
+            }
+
+            var targetState = {
+                r: 0,
+            }
+
+            vacuumTween = new TWEEN.Tween( currentState )
+            .to( targetState, 500 )
+            .easing( TWEEN.Easing.Circular.InOut )
+            .onUpdate( function() {
+                heli_grabberMesh.rotation.y = currentState.r
+                //object.rotation.y = currentState.r
+            })
+            .onComplete( function() {
+                console.log("rotation complete");
+            })
+
+            vacuumTween.start();
+        }
+
         return {
+            activateVacuum:activateVacuum,
+            deactivateVacuum:deactivateVacuum,
             update: update,
             mesh: object,
         }
@@ -294,6 +347,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             })
             .onComplete( function() {
                 onHeliMoved(tile); 
+                if( tile.linkedTo ) {
+                    heli.activateVacuum();
+                }
+                else {
+                    heli.deactivateVacuum();
+                }
             })
 
         heliTween.start();
