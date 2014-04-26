@@ -1,5 +1,13 @@
 "use strict";
 require(['lib/three.min'], function() {
+    var textures = {
+        hole: new THREE.ImageUtils.loadTexture("assets/hole.png"),
+        grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
+        heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
+    }
+
+    //var jsonLoader = new THREE.JSONLoader();
+    //jsonLoader.load('models/schuh.js', addModelToScene);
         
     var scene = new THREE.Scene();
 
@@ -21,14 +29,15 @@ require(['lib/three.min'], function() {
 
     var Tile = function(x,y,z) {
         var geometry = new THREE.PlaneGeometry(1/WIDTH,1/HEIGHT);
-        var material = new THREE.MeshBasicMaterial( { color: randomFromArray(TileColors), wireframe: false } );
+        var material = new THREE.MeshBasicMaterial( { map: textures.grass, wireframe: false } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.position = localToModel(x, y, 0.005);
 
         return {
             x:x,
             y:y,
-            mesh:mesh
+            mesh:mesh,
+            linkedTo:undefined,
         }
     }
 
@@ -40,8 +49,29 @@ require(['lib/three.min'], function() {
         }
     }
 
+    function findUnlinkedTile() {
+        while(true) {
+            var tile = randomFromArray(tiles);
+            if( tile.linkedTo )
+                continue;
+            else
+                return tile;
+        }
+    }
+
+    function linkTwoTiles() {
+        var tileA = findUnlinkedTile();
+        var tileB = findUnlinkedTile();
+        tileA.linkedTo = tileB;
+        tileB.linkedTo = tileA;
+        tileA.mesh.material.map = textures.hole;
+        tileB.mesh.material.map = textures.hole;
+    }
+
+    linkTwoTiles();
+
     var heli_geometry = new THREE.PlaneGeometry(1/WIDTH,1/HEIGHT);
-    var heli_material = new THREE.MeshBasicMaterial( { color: 0xFF00FF, wireframe: false } );
+    var heli_material = new THREE.MeshBasicMaterial( { map: textures.heli, transparent:true, wireframe: false } );
     var heli_mesh = new THREE.Mesh( heli_geometry, heli_material );
     heli_mesh.rotation.x = Math.PI/2;
     heli_mesh.position = localToModel(0,0,0.1);
