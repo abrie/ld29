@@ -29,6 +29,7 @@ require(['util','lib/three.min'], function(util) {
                     var tile = new Generator(x, y, width, height)
                     tile.mesh.position = localToModel(x, y, 0.005);
                     tiles.push(tile);
+                    targetMeshes.push(tile.mesh);
                 }
             }
         }
@@ -37,11 +38,18 @@ require(['util','lib/three.min'], function(util) {
             var result = tiles.filter( function(tile) { 
                 return tile.mesh === mesh;
             });
-            if( result.length > 1) {
-                console.log("warning: multiple tiles contain this mesh.");
-            }
 
-            return result[0];
+            if( result === 0) {
+                console.log("warning: no tile associated with this mesh.");
+                return undefined;
+            }
+            else if( result.length > 1) {
+                console.log("warning: multiple tiles contain this mesh.");
+                return undefined;
+            }
+            else {
+                return result[0];
+            }
         }
 
         function getUnlinkedTiles() {
@@ -62,8 +70,6 @@ require(['util','lib/three.min'], function(util) {
             tileA.mesh.material.map = textures.hole;
             tileB.mesh.material.map = textures.hole;
 
-            targetMeshes.push(tileA.mesh);
-            targetMeshes.push(tileB.mesh);
         }
 
         function getUnoccupiedGopherMounds() {
@@ -193,7 +199,8 @@ require(['util','lib/three.min'], function(util) {
         if( intersects.length > 0 ) {
             intersects.forEach( function( intersected ) {
                 var tile = map.findTileByMesh( intersected.object );
-                console.log(tile);
+                heli_mesh.position = map.localToModel(tile.x,tile.y,0.05);
+                rotor_mesh.position = map.localToModel(tile.x,tile.y,0.2);
             })
         }
     }
