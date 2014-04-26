@@ -4,6 +4,7 @@ require(['util','lib/three.min'], function(util) {
         hole: new THREE.ImageUtils.loadTexture("assets/hole.png"),
         grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
         heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
+        gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png")
     }
 
     var targetMeshes = [];
@@ -54,6 +55,7 @@ require(['util','lib/three.min'], function(util) {
         }
     }
 
+    var gopherMounds = [];
     function linkTwoTiles() {
         var tileA = findUnlinkedTile();
         var tileB = findUnlinkedTile();
@@ -64,15 +66,37 @@ require(['util','lib/three.min'], function(util) {
 
         targetMeshes.push(tileA.mesh);
         targetMeshes.push(tileB.mesh);
+
+        gopherMounds.push(tileA);
+        gopherMounds.push(tileB);
+    }
+
+    function getUnoccupiedGopherMound() {
+        while(true) {
+            var tile = util.randomFromArray(gopherMounds);
+            if( tile.hasGopher )
+                continue;
+            else
+                return tile;
+        }
     }
 
     linkTwoTiles();
+    var gopherMound = getUnoccupiedGopherMound();
+    gopherMound.hasGopher = true;
 
     var rotor_geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT/15);
     var rotor_material = new THREE.MeshBasicMaterial( {color:0xFF00FF, wireframe: false} ); 
     var rotor_mesh = new THREE.Mesh( rotor_geometry, rotor_material );
     rotor_mesh.position = localToModel(0,0,0.2);
     scene.add( rotor_mesh );
+
+    var gopher_geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT);
+    var gopher_material = new THREE.MeshBasicMaterial( { map: textures.gopher, transparent:true, wireframe: false } );
+    var gopher_mesh = new THREE.Mesh( gopher_geometry, gopher_material );
+    gopher_mesh.rotation.x = Math.PI/2;
+    gopher_mesh.position = localToModel(gopherMound.x,gopherMound.y,0.0);
+    scene.add( gopher_mesh );
 
     var heli_geometry = new THREE.PlaneGeometry(1/MAP_WIDTH,1/MAP_HEIGHT);
     var heli_material = new THREE.MeshBasicMaterial( { map: textures.heli, transparent:true, wireframe: false } );
@@ -123,8 +147,8 @@ require(['util','lib/three.min'], function(util) {
         requestAnimationFrame( animate );
 
         theta+= 0.05;
-        camera.position.z = Math.cos(theta)*0.05 + cameraCenter.z;
-        camera.position.y = Math.cos(theta)*0.005 + cameraCenter.y;
+        camera.position.z = Math.cos(theta)*0.005 + cameraCenter.z;
+        camera.position.y = Math.sin(theta)*0.005 + cameraCenter.y;
         camera.position.x = Math.cos(theta)*0.005 + cameraCenter.x;
 
         rotor_mesh.rotation.z += 1;
