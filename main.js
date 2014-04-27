@@ -36,6 +36,24 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             }
         }
 
+        var illustrations = [];
+        function illustrateConnection(meshA, meshB) {
+            var numPoints = 100;
+            var m = illustrations.length+1;
+            var spline = new THREE.SplineCurve3([
+                meshA.position.clone(),
+                meshA.position.clone().add( new THREE.Vector3(0,0,-0.05*m)),
+                meshB.position.clone().add( new THREE.Vector3(0,0,-0.05*m)),
+                meshB.position.clone(),
+            ]);
+
+            var material = new THREE.MeshLambertMaterial({color:0xFFFFFF, linewidth:10});
+            var geometry = new THREE.TubeGeometry( spline, 100, 0.025, 5, false);
+            var mesh = new THREE.Mesh(geometry, material);
+
+            illustrations.push(mesh);
+        }
+
         function findTileByMesh(mesh) {
             var result = tiles.filter( function(tile) { 
                 return tile.mesh === mesh;
@@ -72,6 +90,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             tileA.mesh.material.map = textures.hole;
             tileB.mesh.material.map = textures.hole;
 
+            illustrateConnection(tileA.mesh, tileB.mesh);
         }
 
         var helipadTile = undefined;
@@ -125,6 +144,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             setHelipad: setHelipad,
             getHelipad: getHelipad,
             tiles: tiles,
+            illustrations: illustrations,
         }
     }
 
@@ -163,9 +183,9 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var map = new Map(5, 5, Tile);
     map.setHelipad(0,0);
     map.linkTwoTiles();
-    map.linkTwoTiles();
-    map.linkTwoTiles();
-    map.addGopher();
+    //map.linkTwoTiles();
+    //map.linkTwoTiles();
+    //map.addGopher();
     map.addGopher();
 
     var gopherScale = 2;
@@ -261,7 +281,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                     gopherRemovalInProgress = true;
                 })
                 .onComplete( function() {
-                    scene.remove( gopher.mesh )
+                    container.remove( gopher.mesh )
                     gophers = gophers.filter( function(g) { return g !== gopher; });
                     tile.hasGopher = false;
                     onGopherGone();
@@ -294,7 +314,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         var offset = 1;
         var newContainer = new THREE.Object3D();
         newContainer.position.x = offset;
-        populateContainerWithTiles(newMap, newContainer)
+        populateContainerWithTiles(newMap, newContainer);
+        populateContainerWithIllustrations(newMap, newContainer);
         addGophersToContainer(newMap, newContainer);
         scene.add(newContainer);
 
@@ -447,6 +468,14 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
     populateContainerWithTiles(map, container);
+
+    function populateContainerWithIllustrations(theMap, theContainer) {
+        theMap.illustrations.forEach( function( illustration ) {
+            theContainer.add( illustration );
+        })
+    }
+
+    populateContainerWithIllustrations(map, container);
 
     function ShadowLight(color, intensity) {
         var light = new THREE.SpotLight( color, intensity);
