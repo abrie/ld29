@@ -616,6 +616,7 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
             tween.start();
         }
 
+        var landingHeight = 0.07;
         function activateDryVacuum(theMap) {
             var currentState = {
                 z: object.position.z,
@@ -623,7 +624,7 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
             }
 
             var targetState = {
-                z: 0.05,
+                z: landingHeight,
                 r: Math.PI/2,
             }
 
@@ -652,7 +653,7 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
             }
 
             var targetState = {
-                z: 0.05,
+                z: landingHeight,
                 r: Math.PI/2,
             }
 
@@ -891,6 +892,7 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
             .easing( TWEEN.Easing.Back.Out )
             .onStart( function() {
                 currentlyPeeking = true;
+                createjs.Sound.play( 'peek' );
             })
             .onUpdate( function() {
                 container.rotation.x = current.r;

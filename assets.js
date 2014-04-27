@@ -55,6 +55,7 @@ define(['lib/three.min', 'lib/soundjs.min'], function() {
         {id:"dry1", src:"dry1.mp3"},
         {id:"dry2", src:"dry2.mp3"},
         {id:"dry3", src:"dry3.mp3"},
+        {id:"peek", src:"peek.mp3"},
     ]
 
     var vacuumDrySounds = ["dry1","dry2","dry3"];
