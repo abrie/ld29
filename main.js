@@ -247,7 +247,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
     var gophers = [];
-    function addGophersToContainer(theMap, theContainer) {
+    function populateContainerWithGophers(theMap, theContainer) {
         theMap.getTilesWithGopher().forEach( function(tile) {
             var gopher = new Gopher(theMap, tile);
             gophers.push(gopher);
@@ -255,7 +255,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         });
     }
 
-    addGophersToContainer(map, container);
+    populateContainerWithGophers(map, container);
 
     function onVacuumActivated() {
         if( heli.tile.linkedTo ) {
@@ -324,7 +324,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var trophyContainer = new THREE.Object3D();
     var trophyMeshes = [];
     function initializeTrophyContainer() {
-        trophyContainer.position = new THREE.Vector3(0.65,-1,0.10);
+        trophyContainer.position = new THREE.Vector3(0.50,-1,0.10);
         scene.add( trophyContainer );
     }
 
@@ -375,7 +375,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         newContainer.position.x = offset;
         populateContainerWithTiles(newMap, newContainer);
         populateContainerWithIllustrations(newMap, newContainer);
-        addGophersToContainer(newMap, newContainer);
+        populateContainerWithGophers(newMap, newContainer);
         scene.add(newContainer);
 
 
@@ -669,7 +669,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             })
             .onComplete( function() {
                 onHeliMoved(tile); 
-                if( tile.linkedTo ) {
+                if( tile.linkedTo && !tile.hasGopher ) {
                     heli.activateVacuum();
                 }
                 else {
