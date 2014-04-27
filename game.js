@@ -186,8 +186,8 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
     }
 
     var ButtonMesh = function(map) {
-        var geometry = new THREE.PlaneGeometry(0.10, 0.05);
-        var material = new THREE.MeshBasicMaterial( { map:map } );
+        var geometry = new THREE.PlaneGeometry(0.25, 0.125);
+        var material = new THREE.MeshBasicMaterial( { map:map, transparent:true } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.rotation.x = Math.PI/2;
         return mesh;
