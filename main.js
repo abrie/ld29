@@ -797,8 +797,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             gopher.update();
         })
 
-        trophyMeshes.forEach( function(trophyMesh) {
-            console.log(trophyMesh);
+        trophyMeshes.forEach( function(trophyMesh, index) {
             trophyMesh.rotation.z = Math.sin(theta)/2;
         })
 
