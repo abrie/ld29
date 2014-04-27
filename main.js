@@ -374,6 +374,7 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
                     onGopherGone(theMap, tile.gopherType);
                     tile.hasGopher = false;
                     tile.gopherType = undefined;
+                    tile.mesh.material.map = textures.circlehole;
                     gopherRemovalInProgress = false;
                     heli.takeoff();
                 });
