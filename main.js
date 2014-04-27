@@ -22,8 +22,12 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
         {id:"loop3", src:"loop3.mp3"},
         {id:"right", src:"right.mp3"},
         {id:"wrong", src:"wrong.mp3"},
+        {id:"dry1", src:"dry1.mp3"},
+        {id:"dry2", src:"dry2.mp3"},
+        {id:"dry3", src:"dry3.mp3"},
     ]
 
+    var vacuumDrySounds = ["dry1","dry2","dry3"];
     var vacuumSounds = ["loop1","loop2","loop3"];
     var soundLoadCount = 0;
     function handleLoad(event) {
@@ -37,13 +41,16 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
         createjs.Sound.play( util.randomFromArray(vacuumSounds) );
     }
 
+    function playEmptySound() {
+        createjs.Sound.play( util.randomFromArray(vacuumDrySounds) );
+    }
+
     function musicLoaded() {
         console.log("all sounds loaded.")
     }
 
     createjs.Sound.addEventListener("fileload", handleLoad);
     createjs.Sound.registerManifest(manifest, audioPath);
-    console.log(createjs.Sound);
 
     var gopherTypeCount = 3;
     function getTextureForGopherType(id) {
@@ -646,6 +653,35 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
             tween.start();
         }
 
+        function activateDryVacuum(theMap) {
+            var currentState = {
+                z: object.position.z,
+                r: heli_grabberMesh.rotation.y,
+            }
+
+            var targetState = {
+                z: 0.05,
+                r: Math.PI/2,
+            }
+
+            vacuumTween = new TWEEN.Tween( currentState )
+            .to( targetState, 250 )
+            .easing( TWEEN.Easing.Circular.InOut )
+            .onUpdate( function() {
+                object.position.z = currentState.z;
+                heli_grabberMesh.rotation.y = currentState.r;
+            })
+            .onStart( function() {
+                playEmptySound();
+            })
+            .onComplete( function() {
+                deactivateVacuum();
+                heli.takeoff();
+            });
+
+            vacuumTween.start();
+        }
+
         function activateVacuum(theMap) {
             var currentState = {
                 z: object.position.z,
@@ -696,6 +732,7 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
 
         return {
             activateVacuum:activateVacuum,
+            activateDryVacuum:activateDryVacuum,
             deactivateVacuum:deactivateVacuum,
             takeoff:takeoff,
             update: update,
@@ -848,8 +885,13 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
             })
             .onComplete( function() {
                 onHeliMoved(tile); 
-                if( tile.linkedTo && !tile.hasGopher ) {
-                    heli.activateVacuum( theMap );
+                if( tile.linkedTo ) {
+                    if( tile.linkedTo.hasGopher ) {
+                        heli.activateVacuum( theMap );
+                    }
+                    else {
+                        heli.activateDryVacuum( theMap );
+                    }
                 }
                 else {
                     heli.deactivateVacuum( theMap );
