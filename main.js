@@ -40,11 +40,18 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         var targetMeshes = [];
         var tilesWithGopherMounds = [];
 
+        function hideHighlights() {
+            tiles.forEach( function(tile) { 
+                tile.highlight(false);
+            });
+        }
+
         function populate() {
             for( var x = 0; x < width; x++ ) {
                 for( var y = 0; y < height; y++ ) {
                     var tile = new Generator(x, y, width, height)
                     tile.mesh.position = localToModel(x, y, 0.005);
+                    tile.highlightMesh.position = localToModel(x, y, 0.015);
                     tiles.push(tile);
                     targetMeshes.push(tile.mesh);
                 }
@@ -174,6 +181,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             tiles: tiles,
             illustrations: illustrations,
             makeLinks: makeLinks,
+            hideHighlights: hideHighlights,
         }
     }
 
@@ -200,11 +208,27 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         return mesh;
     }
 
+    var TileHighlightMesh = function(mapWidth, mapHeight) {
+        var geometry = new THREE.PlaneGeometry(1/mapWidth/1.01,1/mapHeight/1.01);
+        var material = new THREE.MeshLambertMaterial( { color:0xFFFF11, opacity:0.30, transparent:true });
+        var mesh = new THREE.Mesh( geometry, material );
+        mesh.receiveShadow = true;
+        return mesh;
+    }
+
     var Tile = function(x, y, mapWidth, mapHeight) {
+        var highlightMesh = new TileHighlightMesh(mapWidth, mapHeight);
+
+        function highlight(state) { 
+            highlightMesh.visible = state;
+        }
+
         return {
             x:x,
             y:y,
             mesh: new TileMesh(mapWidth, mapHeight),
+            highlightMesh: highlightMesh,
+            highlight: highlight,
             linkedTo:undefined,
         }
     }
@@ -608,6 +632,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     function populateContainerWithTiles(theMap, theContainer) {
         theMap.tiles.forEach( function( tile ) {
             theContainer.add( tile.mesh );
+            theContainer.add( tile.highlightMesh );
+            tile.highlight(false);
         })
     }
 
@@ -666,6 +692,29 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     document.body.appendChild( renderer.domElement );
 
     var mouse = {x:0,y:0};
+    function onDocumentMouseMove(e) {
+        map.hideHighlights();
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+        var vector = new THREE.Vector3( mouse.x, mouse.y, 1);
+        projector.unprojectVector(vector, camera);
+
+        var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+
+        var controlsIntersection = ray.intersectObjects( buttons );
+        if( controlsIntersection.length > 0 ) {
+           //peekBelowTheSurface(); 
+        }
+        else {
+            var intersects = ray.intersectObjects( map.targetMeshes )
+            if( intersects.length > 0 ) {
+                var tile = map.findTileByMesh( intersects[0].object );
+                tile.highlight(true);
+            }
+        }
+    }
+
     function onDocumentMouseDown(e) {
         mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -768,6 +817,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var projector = new THREE.Projector();
     document.addEventListener('mousedown', onDocumentMouseDown, false);
+    document.addEventListener('mousemove', onDocumentMouseMove, false);
 
     var map = new Map(3, 3, Tile);
     map.setHelipad(0,0);
