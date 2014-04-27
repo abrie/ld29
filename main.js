@@ -5,7 +5,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
         heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
         gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png"),
-        peekbelow: new THREE.ImageUtils.loadTexture("assets/peekbelow.png")
+        peekbelow: new THREE.ImageUtils.loadTexture("assets/peekbelow.png"),
+        helipad: new THREE.ImageUtils.loadTexture("assets/helipad.png")
     }
 
     var scene = new THREE.Scene();
@@ -55,7 +56,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
         function getUnlinkedTiles() {
             return tiles.filter( function(tile){
-                return tile.linkedTo === undefined;
+                return tile.linkedTo === undefined && tile !== helipadTile;
             });
         }
 
@@ -71,6 +72,17 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             tileA.mesh.material.map = textures.hole;
             tileB.mesh.material.map = textures.hole;
 
+        }
+
+        var helipadTile = undefined;
+        function setHelipad(x,y) {
+            var tile = tiles[y*width+x];
+            helipadTile = tile;
+            tile.mesh.material.map = textures.helipad;
+        }
+
+        function getHelipad() {
+            return helipadTile;
         }
 
         function getUnoccupiedGopherMounds() {
@@ -110,6 +122,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             getTilesWithGopher: getTilesWithGopher,
             findTileByMesh: findTileByMesh,
             getTile: getTile,
+            setHelipad: setHelipad,
+            getHelipad: getHelipad,
             tiles: tiles,
         }
     }
@@ -147,6 +161,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
     var map = new Map(5, 5, Tile);
+    map.setHelipad(0,0);
     map.linkTwoTiles();
     map.linkTwoTiles();
     map.linkTwoTiles();
@@ -269,6 +284,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     function proceedToNextLevel() {
         var newMap = new Map(5, 5, Tile);
+        newMap.setHelipad(0,0);
         newMap.linkTwoTiles();
         newMap.linkTwoTiles();
         newMap.linkTwoTiles();
