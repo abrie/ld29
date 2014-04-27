@@ -41,14 +41,14 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             var numPoints = 100;
             var m = illustrations.length+1;
             var spline = new THREE.SplineCurve3([
-                meshA.position.clone(),
-                meshA.position.clone().add( new THREE.Vector3(0,0,-0.05*m)),
-                meshB.position.clone().add( new THREE.Vector3(0,0,-0.05*m)),
-                meshB.position.clone(),
+                meshA.position.clone().add( new THREE.Vector3(0,0,-0.02)),
+                meshA.position.clone().add( new THREE.Vector3(0,0,-0.02-0.05*m)),
+                meshB.position.clone().add( new THREE.Vector3(0,0,-0.02-0.05*m)),
+                meshB.position.clone().add( new THREE.Vector3(0,0,-0.02)),
             ]);
 
             var material = new THREE.MeshLambertMaterial({color:0xFFFFFF, linewidth:10});
-            var geometry = new THREE.TubeGeometry( spline, 100, 0.025, 5, false);
+            var geometry = new THREE.TubeGeometry( spline, 50, 0.025, 12, false);
             var mesh = new THREE.Mesh(geometry, material);
 
             illustrations.push(mesh);
@@ -100,6 +100,15 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             tile.mesh.material.map = textures.helipad;
         }
 
+        function makeLinks( linkCount, gopherCount ) {
+            for(var i = 0; i < linkCount; i++) {
+                linkTwoTiles();
+            }
+            for(var i = 0; i < gopherCount ; i++) {
+                addGopher();
+            }
+        }
+
         function getHelipad() {
             return helipadTile;
         }
@@ -136,8 +145,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             localToModel:localToModel,
             targetMeshes:targetMeshes,
             tilesWithGopherMounds: tilesWithGopherMounds,
-            linkTwoTiles: linkTwoTiles,
-            addGopher: addGopher,
             getTilesWithGopher: getTilesWithGopher,
             findTileByMesh: findTileByMesh,
             getTile: getTile,
@@ -145,6 +152,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             getHelipad: getHelipad,
             tiles: tiles,
             illustrations: illustrations,
+            makeLinks: makeLinks,
         }
     }
 
@@ -182,11 +190,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var map = new Map(5, 5, Tile);
     map.setHelipad(0,0);
-    map.linkTwoTiles();
-    //map.linkTwoTiles();
-    //map.linkTwoTiles();
-    //map.addGopher();
-    map.addGopher();
+    map.makeLinks(1,1);
 
     var gopherScale = 2;
     function GopherMesh() {
@@ -305,11 +309,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     function proceedToNextLevel() {
         var newMap = new Map(5, 5, Tile);
         newMap.setHelipad(0,0);
-        newMap.linkTwoTiles();
-        newMap.linkTwoTiles();
-        newMap.linkTwoTiles();
-        newMap.addGopher();
-        newMap.addGopher();
+        newMap.makeLinks(2,2);
 
         var offset = 1;
         var newContainer = new THREE.Object3D();
