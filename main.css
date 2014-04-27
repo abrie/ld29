@@ -7,6 +7,10 @@ body {
     margin:0;
     padding:0;
     font-family: 'game', serif;
+    -webkit-user-select: none;  
+    -moz-user-select: none;    
+    -ms-user-select: none;      
+    user-select: none;
 }
 
 #hud {

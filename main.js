@@ -836,7 +836,11 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
         console.log("Heli moved", tile);
     }
 
+    var currentlyPeeking = false;
     function peekBelowTheSurface() {
+        if( currentlyPeeking ) {
+            return;
+        }
         var current = {
             r: 0,
         };
@@ -853,6 +857,9 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
         var tweenUp = new TWEEN.Tween( current )
             .to( target, 3000 )
             .easing( TWEEN.Easing.Back.Out )
+            .onStart( function() {
+                currentlyPeeking = true;
+            })
             .onUpdate( function() {
                 container.rotation.x = current.r;
             });
@@ -865,6 +872,7 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
             })
             .onComplete( function() {
                 sublight.intensity = 0;
+                currentlyPeeking = false;
             });
 
         tweenUp.chain( tweenDown );
