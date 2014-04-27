@@ -7,7 +7,17 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
         gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png"),
         peekbelow: new THREE.ImageUtils.loadTexture("assets/peekbelow.png"),
-        helipad: new THREE.ImageUtils.loadTexture("assets/helipad.png")
+        helipad: new THREE.ImageUtils.loadTexture("assets/helipad.png"),
+        c1: new THREE.ImageUtils.loadTexture("assets/c1.png"),
+        c2: new THREE.ImageUtils.loadTexture("assets/c2.png"),
+    }
+
+    function getTextureForGopherType(id) {
+        switch(id) {
+            case 0: return textures.c1; break;
+            case 1: return textures.c2; break;
+            case 3: return textures.gopher; break;
+        }
     }
 
     var scene = new THREE.Scene();
@@ -108,7 +118,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 linkTwoTiles();
             }
             for(var i = 0; i < gopherCount ; i++) {
-                addGopher();
+                addGopher( i );
             }
         }
 
@@ -123,11 +133,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             })
         }
 
-        function addGopher() {
+        function addGopher(type) {
             var available = getUnoccupiedGopherMounds();
             if( available.length > 0) {
                 var tile = util.randomFromArray(available);
                 tile.hasGopher = true;
+                tile.gopherType = type;
                 tile.linkedTo.mesh.material.map = textures.circlehole;
             }
         }
@@ -209,6 +220,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var Gopher = function(tile) {
         var mesh = new GopherMesh(); 
+        mesh.material.map = getTextureForGopherType(tile.gopherType); 
         mesh.position = map.localToModel(tile.x, tile.y, 1/map.height/gopherScale/2);
 
         var rotationRate = 0;
@@ -296,12 +308,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 .onComplete( function() {
                     container.remove( gopher.mesh )
                     gophers = gophers.filter( function(g) { return g !== gopher; });
+                    onGopherGone(tile.gopherType);
                     tile.hasGopher = false;
-                    onGopherGone();
+                    tile.gopherType = undefined;
                     gopherRemovalInProgress = false;
                     heli.takeoff();
                 });
-            console.log("test");
 
             tween.start();
     }
@@ -309,11 +321,47 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     function action_nothing() {
     }
 
-    function onGopherGone() {
+    var trophyContainer = new THREE.Object3D();
+    var trophyMeshes = [];
+    function initializeTrophyContainer() {
+        trophyContainer.position = new THREE.Vector3(0.65,-1,0.10);
+        scene.add( trophyContainer );
+    }
+
+    function clearTrophies() {
+        trophyMeshes.forEach( function(mesh) {
+            trophyContainer.remove(mesh);
+        })
+        trophyMeshes.length = 0;
+    }
+
+    function addTrophy( mesh ) {
+        trophyMeshes.push( mesh );
+        mesh.position.z = 0 + 1/map.width/2*(trophyMeshes.length-1);
+        trophyContainer.add( mesh );
+    }
+
+    function onGopherGone( gopherType ) {
+        var trophyMesh = new GopherMesh();
+        trophyMesh.material.map = getTextureForGopherType(gopherType);
+        addTrophy( trophyMesh );
+
         if( gophers.length === 0) {
-            proceedToNextLevel();
+            var progressTween = new TWEEN.Tween({x:0})
+                .to({x:Math.PI},500)
+                .easing(TWEEN.Easing.Linear.None)
+                .onUpdate( function() {
+                    trophyMeshes.forEach( function(mesh){
+                        mesh.rotation.z += 0.01*Math.random();
+                    });
+                })
+                .onComplete( function() {
+                    clearTrophies();
+                    proceedToNextLevel();
+                });
+
+            progressTween.start();
         }
-        console.log("gopher eliminated");
     }
 
     function proceedToNextLevel() {
@@ -321,7 +369,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         newMap.setHelipad(0,0);
         newMap.makeLinks(2,2);
 
-        var offset = 1.5;
         var newContainer = new THREE.Object3D();
         newContainer.position.x = offset;
         populateContainerWithTiles(newMap, newContainer);
@@ -329,6 +376,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         addGophersToContainer(newMap, newContainer);
         scene.add(newContainer);
 
+
+        var offset = 1.7;
         var current = {
             delta: 0,
         }
@@ -585,13 +634,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         if( controlsIntersection.length > 0 ) {
            peekBelowTheSurface(); 
         }
-
-        var intersects = ray.intersectObjects( map.targetMeshes )
-        if( intersects.length > 0 ) {
-            intersects.forEach( function( intersected ) {
-                var tile = map.findTileByMesh( intersected.object );
+        else {
+            var intersects = ray.intersectObjects( map.targetMeshes )
+            if( intersects.length > 0 ) {
+                var tile = map.findTileByMesh( intersects[0].object );
                 moveHeli( tile );
-            })
+            }
         }
     }
 
@@ -673,6 +721,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     document.addEventListener('mousedown', onDocumentMouseDown, false);
 
     moveHeli( map.getTile(0,0) );
+    initializeTrophyContainer();
 
     var theta = 0;
     function animate() {
