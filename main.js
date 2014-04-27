@@ -218,10 +218,10 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         return mesh;
     }
 
-    var Gopher = function(tile) {
+    var Gopher = function(theMap, tile) {
         var mesh = new GopherMesh(); 
         mesh.material.map = getTextureForGopherType(tile.gopherType); 
-        mesh.position = map.localToModel(tile.x, tile.y, 1/map.height/gopherScale/2);
+        mesh.position = theMap.localToModel(tile.x, tile.y, 1/theMap.height/gopherScale/2);
 
         var rotationRate = 0;
         function incRotationRate(delta) {
@@ -249,7 +249,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var gophers = [];
     function addGophersToContainer(theMap, theContainer) {
         theMap.getTilesWithGopher().forEach( function(tile) {
-            var gopher = new Gopher(tile);
+            var gopher = new Gopher(theMap, tile);
             gophers.push(gopher);
             theContainer.add( gopher.mesh );
         });
