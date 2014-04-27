@@ -5,7 +5,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
         heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
         gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png"),
-        peekbelow: new THREE.ImageUtils.loadTexture("assets/peekbelow.png")
+        peekbelow: new THREE.ImageUtils.loadTexture("assets/peekbelow.png"),
+        helipad: new THREE.ImageUtils.loadTexture("assets/helipad.png")
     }
 
     var scene = new THREE.Scene();
@@ -55,7 +56,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
         function getUnlinkedTiles() {
             return tiles.filter( function(tile){
-                return tile.linkedTo === undefined;
+                return tile.linkedTo === undefined && tile !== helipadTile;
             });
         }
 
@@ -71,6 +72,17 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             tileA.mesh.material.map = textures.hole;
             tileB.mesh.material.map = textures.hole;
 
+        }
+
+        var helipadTile = undefined;
+        function setHelipad(x,y) {
+            var tile = tiles[y*width+x];
+            helipadTile = tile;
+            tile.mesh.material.map = textures.helipad;
+        }
+
+        function getHelipad() {
+            return helipadTile;
         }
 
         function getUnoccupiedGopherMounds() {
@@ -110,6 +122,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             getTilesWithGopher: getTilesWithGopher,
             findTileByMesh: findTileByMesh,
             getTile: getTile,
+            setHelipad: setHelipad,
+            getHelipad: getHelipad,
             tiles: tiles,
         }
     }
@@ -130,7 +144,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     scene.add( peekButton )
 
     var TileMesh = function(mapWidth, mapHeight) {
-        var geometry = new THREE.PlaneGeometry(1/mapWidth,1/mapHeight);
+        var geometry = new THREE.CubeGeometry(1/mapWidth,1/mapHeight,0.01);
         var material = new THREE.MeshLambertMaterial( { map: textures.grass, side: THREE.DoubleSide } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.receiveShadow = true;
@@ -147,6 +161,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
     var map = new Map(5, 5, Tile);
+    map.setHelipad(0,0);
     map.linkTwoTiles();
     map.linkTwoTiles();
     map.linkTwoTiles();
@@ -269,6 +284,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     function proceedToNextLevel() {
         var newMap = new Map(5, 5, Tile);
+        newMap.setHelipad(0,0);
         newMap.linkTwoTiles();
         newMap.linkTwoTiles();
         newMap.linkTwoTiles();
@@ -432,9 +448,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     populateContainerWithTiles(map, container);
 
-    function ShadowLight() {
-        var light = new THREE.SpotLight( 0xFFFFFF, 1);
-        //sun.shadowCameraVisible = true;
+    function ShadowLight(color, intensity) {
+        var light = new THREE.SpotLight( color, intensity);
         light.shadowMapWidth = 128;
         light.shadowMapHeight = 128;
         var d = 0.1;
@@ -451,9 +466,24 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         return light;
     }
 
-    var sun = new ShadowLight();
+    var ambientLight = new THREE.AmbientLight(0x0A0A0A);
+    scene.add(ambientLight);
+
+    var sun = new ShadowLight(0xFFFFFF,1);
+    //sun.shadowCameraVisible = true;
     sun.position = new THREE.Vector3(0,0,2);
     scene.add( sun );
+
+    var sublight = new ShadowLight(0xFF0000,1.0);
+    //sublight.shadowCameraVisible = true;
+    sublight.shadowCameraNear = 0.10;
+    sublight.shadowCameraFar = 1.3;
+    sublight.position.x = peekButton.position.x-0.01; 
+    sublight.position.y = peekButton.position.y; 
+    sublight.position.z = peekButton.position.z; 
+    sublight.intensity = 0;
+    scene.add(sublight);
+
     scene.add( container );
 
     var renderer = new THREE.WebGLRenderer();
@@ -537,18 +567,33 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         };
 
         var target = {
-            r: -Math.PI*2,
+            r: -Math.PI/5,
         }
 
-        var tween = new TWEEN.Tween( current )
-            .to( target, 2000 )
+        var downTarget = {
+            r: 0,
+        }
+
+        sublight.intensity = 1;
+        var tweenUp = new TWEEN.Tween( current )
+            .to( target, 3000 )
             .easing( TWEEN.Easing.Back.Out )
             .onUpdate( function() {
                 container.rotation.x = current.r;
-            })
-            .yoyo();
+            });
 
-        tween.start();
+        var tweenDown = new TWEEN.Tween( current )
+            .to( downTarget, 1000 )
+            .easing( TWEEN.Easing.Back.In )
+            .onUpdate( function() {
+                container.rotation.x = current.r;
+            })
+            .onComplete( function() {
+                sublight.intensity = 0;
+            });
+
+        tweenUp.chain( tweenDown );
+        tweenUp.start();
     }
 
     var projector = new THREE.Projector();
