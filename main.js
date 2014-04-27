@@ -52,15 +52,15 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             var numPoints = 100;
             var m = illustrations.length+1;
             var spline = new THREE.SplineCurve3([
-                meshA.position.clone().add( new THREE.Vector3(0,0,-0.02)),
-                meshA.position.clone().add( new THREE.Vector3(0,0,-0.02-0.05*m)),
-                meshB.position.clone().add( new THREE.Vector3(0,0,-0.02-0.05*m)),
-                meshB.position.clone().add( new THREE.Vector3(0,0,-0.02)),
+                meshA.position.clone().add( new THREE.Vector3(0,0,-0.02) ),
+                meshA.position.clone().add( new THREE.Vector3(0,0,-0.02-0.05*m) ),
+                meshB.position.clone().add( new THREE.Vector3(0,0,-0.02-0.05*m) ),
+                meshB.position.clone().add( new THREE.Vector3(0,0,-0.02) ),
             ]);
 
-            var material = new THREE.MeshLambertMaterial({color:0xFFFFFF, linewidth:10});
-            var geometry = new THREE.TubeGeometry( spline, 50, 0.025, 12, false);
-            var mesh = new THREE.Mesh(geometry, material);
+            var material = new THREE.MeshLambertMaterial( { color:0xFFFFFF } );
+            var geometry = new THREE.TubeGeometry( spline, 50, 0.025, 12, false );
+            var mesh = new THREE.Mesh( geometry, material );
 
             illustrations.push(mesh);
         }
