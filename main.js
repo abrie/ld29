@@ -331,18 +331,20 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
 
         var tween = new TWEEN.Tween(current)
-            .to(target, 3000)
-            .easing(TWEEN.Easing.Elastic.Out)
+            .to(target, 2000)
+            .easing(TWEEN.Easing.Cubic.Out)
             .onUpdate( function() {
                 container.position.x = -current.delta;
                 newContainer.position.x = offset-current.delta;
             })
             .onComplete( function() {
                 container.remove( heli.mesh );
+                var worldCoordinates = container.localToWorld( heli.mesh.position );
                 scene.remove( container );
                 map = newMap;
                 container = newContainer;
                 container.add( heli.mesh );
+                heli.mesh.position = container.worldToLocal( worldCoordinates );
                 moveHeli( map.getTile(0,0) );
             });
         tween.start();
