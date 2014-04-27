@@ -16,7 +16,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         switch(id) {
             case 0: return textures.c1; break;
             case 1: return textures.c2; break;
-            case 3: return textures.gopher; break;
+            case 2: return textures.gopher; break;
         }
     }
 
@@ -364,10 +364,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
     }
 
+    var levelCount = 0;
     function proceedToNextLevel() {
-        var newMap = new Map(5, 5, Tile);
+        levelCount++;
+        var newMap = new Map(5+levelCount, 5+levelCount, Tile);
         newMap.setHelipad(0,0);
-        newMap.makeLinks(2,2);
+        newMap.makeLinks(2+levelCount,2+levelCount);
 
         var newContainer = new THREE.Object3D();
         newContainer.position.x = offset;
