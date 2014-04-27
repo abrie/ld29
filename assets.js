@@ -6,7 +6,9 @@ define(['lib/three.min', 'lib/soundjs.min'], function() {
     var textureManifest = [
         {id:'hole', src:"assets/hole.png"},
         {id:'circlehole', src:"assets/circlehole.png"},
-        {id:'grass', src: "assets/grass.png"},
+        {id:'grass1', src: "assets/grass1.png"},
+        {id:'grass2', src: "assets/grass2.png"},
+        {id:'grass3', src: "assets/grass3.png"},
         {id:'heli', src: "assets/heli.png"},
         {id:'gopher', src: "assets/gopher.png"},
         {id:'peekbelow', src: "assets/peekbelow.png"},
@@ -16,6 +18,8 @@ define(['lib/three.min', 'lib/soundjs.min'], function() {
         {id:'right', src: "assets/right.png"},
         {id:'wrong', src: "assets/wrong.png"},
     ];
+
+    var grassTextures = ["grass1","grass2","grass3"];
 
     function updateHud() {
         hud.innerHTML += "."; 
@@ -89,6 +93,7 @@ define(['lib/three.min', 'lib/soundjs.min'], function() {
     console.log("waiting");
     return {
         textures:textures,
+        grassTextures:grassTextures,
         vacuumDrySounds:vacuumDrySounds,
         vacuumSounds:vacuumSounds,
         setOnAllLoaded:setOnAllLoaded

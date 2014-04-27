@@ -2,6 +2,10 @@
 define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(util) {
     function Instance(asset) {
 
+    function getGrassTexture() {
+        return asset.textures[ util.randomFromArray(asset.grassTextures) ];
+    }
+
     function playRandomSound() {
         createjs.Sound.play( util.randomFromArray(asset.vacuumSounds) );
     }
@@ -198,7 +202,7 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
 
     var TileMesh = function(mapWidth, mapHeight) {
         var geometry = new THREE.BoxGeometry(1/mapWidth,1/mapHeight,0.01);
-        var material = new THREE.MeshLambertMaterial( { map: asset.textures.grass, transparent:true, side: THREE.DoubleSide } );
+        var material = new THREE.MeshLambertMaterial( { map: getGrassTexture(), transparent:true, side: THREE.DoubleSide } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.receiveShadow = true;
         return mesh;
