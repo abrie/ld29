@@ -194,11 +194,19 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
     }
 
     var buttons = [];
-    var peekButton = new ButtonMesh(asset.textures.peekbelow);
+    var peekCount = 0;
+    var peekButtonTextures = ["peekbelow1","peekbelow2","peekbelow3","peekbelow4"];
+    var peekButton = new ButtonMesh( asset.textures[peekButtonTextures[peekCount]]);
     peekButton.position.x = -0.5;
     peekButton.position.y = -0.7;
     buttons.push(peekButton);
     scene.add( peekButton )
+
+
+    function resetPeeks() {
+        peekCount = 0;
+        peekButton.material.map = asset.textures[peekButtonTextures[peekCount]];
+    }
 
     var TileMesh = function(mapWidth, mapHeight) {
         var geometry = new THREE.BoxGeometry(1/mapWidth,1/mapHeight,0.01);
@@ -506,6 +514,8 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
         populateContainerWithGophers(newMap, newContainer);
         scene.add(newContainer);
 
+        resetPeeks();
+
         var offset = 1.7;
         var current = {
             delta: 0,
@@ -790,16 +800,10 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
 
         var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
 
-        var controlsIntersection = ray.intersectObjects( buttons );
-        if( controlsIntersection.length > 0 ) {
-           //peekBelowTheSurface(); 
-        }
-        else {
-            var intersects = ray.intersectObjects( map.targetMeshes )
-            if( intersects.length > 0 ) {
-                var tile = map.findTileByMesh( intersects[0].object );
-                tile.highlight(true);
-            }
+        var intersects = ray.intersectObjects( map.targetMeshes )
+        if( intersects.length > 0 ) {
+            var tile = map.findTileByMesh( intersects[0].object );
+            tile.highlight(true);
         }
     }
 
@@ -873,9 +877,52 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
         console.log("Heli moved", tile);
     }
 
+    function failPeek() {
+        var current = {
+            r: 0,
+        };
+
+        var target = {
+            r: Math.PI/10,
+        }
+
+        var downTarget = {
+            r: 0,
+        }
+        var tweenUp = new TWEEN.Tween( current )
+            .to( target, 1500 )
+            .easing( TWEEN.Easing.Back.Out )
+            .onStart( function() {
+                currentlyPeeking = true;
+                createjs.Sound.play( 'nomorepeeks', {volume:0.1} );
+            })
+            .onUpdate( function() {
+                container.rotation.x = current.r;
+            })
+            .onComplete( function(){
+            });
+
+        var tweenDown = new TWEEN.Tween( current )
+            .to( downTarget, 1000 )
+            .easing( TWEEN.Easing.Back.In )
+            .onUpdate( function() {
+                container.rotation.x = current.r;
+            })
+            .onComplete( function() {
+                currentlyPeeking = false;
+            });
+
+        tweenUp.chain( tweenDown );
+        tweenUp.start();
+    }
+
     var currentlyPeeking = false;
     function peekBelowTheSurface() {
         if( currentlyPeeking ) {
+            return;
+        }
+        if( peekCount >= 3) {
+            failPeek();
             return;
         }
         var current = {
@@ -911,6 +958,8 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
             .onComplete( function() {
                 sublight.intensity = 0;
                 currentlyPeeking = false;
+                peekCount++;
+                peekButton.material.map = asset.textures[peekButtonTextures[peekCount]];
             });
 
         tweenUp.chain( tweenDown );

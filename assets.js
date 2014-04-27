@@ -11,7 +11,10 @@ define(['lib/three.min', 'lib/soundjs.min'], function() {
         {id:'grass3', src: "assets/grass3.png"},
         {id:'heli', src: "assets/heli.png"},
         {id:'gopher', src: "assets/gopher.png"},
-        {id:'peekbelow', src: "assets/peekbelow.png"},
+        {id:'peekbelow1', src: "assets/peekbelow.png"},
+        {id:'peekbelow2', src: "assets/peekbelow2.png"},
+        {id:'peekbelow3', src: "assets/peekbelow3.png"},
+        {id:'peekbelow4', src: "assets/peekbelow4.png"},
         {id:'helipad', src: "assets/helipad.png"},
         {id:'c1', src: "assets/c1.png"},
         {id:'c2', src: "assets/c2.png"},
@@ -56,6 +59,7 @@ define(['lib/three.min', 'lib/soundjs.min'], function() {
         {id:"dry2", src:"dry2.mp3"},
         {id:"dry3", src:"dry3.mp3"},
         {id:"peek", src:"peek.mp3"},
+        {id:"nomorepeeks", src:"nomorepeeks.mp3"}
     ]
 
     var vacuumDrySounds = ["dry1","dry2","dry3"];
