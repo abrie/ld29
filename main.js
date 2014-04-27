@@ -144,7 +144,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     scene.add( peekButton )
 
     var TileMesh = function(mapWidth, mapHeight) {
-        var geometry = new THREE.PlaneGeometry(1/mapWidth,1/mapHeight);
+        var geometry = new THREE.CubeGeometry(1/mapWidth,1/mapHeight,0.01);
         var material = new THREE.MeshLambertMaterial( { map: textures.grass, side: THREE.DoubleSide } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.receiveShadow = true;
@@ -465,6 +465,9 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
         return light;
     }
+
+    var ambientLight = new THREE.AmbientLight(0x0A0A0A);
+    scene.add(ambientLight);
 
     var sun = new ShadowLight(0xFFFFFF,1);
     //sun.shadowCameraVisible = true;
