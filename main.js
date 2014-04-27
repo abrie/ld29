@@ -448,9 +448,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     populateContainerWithTiles(map, container);
 
-    function ShadowLight() {
-        var light = new THREE.SpotLight( 0xFFFFFF, 1);
-        //sun.shadowCameraVisible = true;
+    function ShadowLight(color, intensity) {
+        var light = new THREE.SpotLight( color, intensity);
         light.shadowMapWidth = 128;
         light.shadowMapHeight = 128;
         var d = 0.1;
@@ -467,9 +466,21 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         return light;
     }
 
-    var sun = new ShadowLight();
+    var sun = new ShadowLight(0xFFFFFF,1);
+    //sun.shadowCameraVisible = true;
     sun.position = new THREE.Vector3(0,0,2);
     scene.add( sun );
+
+    var sublight = new ShadowLight(0xFF0000,1.0);
+    //sublight.shadowCameraVisible = true;
+    sublight.shadowCameraNear = 0.10;
+    sublight.shadowCameraFar = 1.3;
+    sublight.position.x = peekButton.position.x-0.01; 
+    sublight.position.y = peekButton.position.y; 
+    sublight.position.z = peekButton.position.z; 
+    sublight.intensity = 0;
+    scene.add(sublight);
+
     scene.add( container );
 
     var renderer = new THREE.WebGLRenderer();
@@ -553,18 +564,33 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         };
 
         var target = {
-            r: -Math.PI*2,
+            r: -Math.PI/5,
         }
 
-        var tween = new TWEEN.Tween( current )
-            .to( target, 2000 )
+        var downTarget = {
+            r: 0,
+        }
+
+        sublight.intensity = 1;
+        var tweenUp = new TWEEN.Tween( current )
+            .to( target, 3000 )
             .easing( TWEEN.Easing.Back.Out )
             .onUpdate( function() {
                 container.rotation.x = current.r;
-            })
-            .yoyo();
+            });
 
-        tween.start();
+        var tweenDown = new TWEEN.Tween( current )
+            .to( downTarget, 1000 )
+            .easing( TWEEN.Easing.Back.In )
+            .onUpdate( function() {
+                container.rotation.x = current.r;
+            })
+            .onComplete( function() {
+                sublight.intensity = 0;
+            });
+
+        tweenUp.chain( tweenDown );
+        tweenUp.start();
     }
 
     var projector = new THREE.Projector();
