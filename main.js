@@ -13,10 +13,10 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
     function getTextureForGopherType(id) {
-        switch(id) {
+        switch(id%3) {
             case 0: return textures.c1; break;
             case 1: return textures.c2; break;
-            case 3: return textures.gopher; break;
+            case 2: return textures.gopher; break;
         }
     }
 
@@ -204,7 +204,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
     }
 
-    var map = new Map(5, 5, Tile);
+    var map = new Map(3, 3, Tile);
     map.setHelipad(0,0);
     map.makeLinks(1,1);
 
@@ -218,10 +218,10 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         return mesh;
     }
 
-    var Gopher = function(tile) {
+    var Gopher = function(theMap, tile) {
         var mesh = new GopherMesh(); 
         mesh.material.map = getTextureForGopherType(tile.gopherType); 
-        mesh.position = map.localToModel(tile.x, tile.y, 1/map.height/gopherScale/2);
+        mesh.position = theMap.localToModel(tile.x, tile.y, 1/theMap.height/gopherScale/2);
 
         var rotationRate = 0;
         function incRotationRate(delta) {
@@ -249,7 +249,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var gophers = [];
     function addGophersToContainer(theMap, theContainer) {
         theMap.getTilesWithGopher().forEach( function(tile) {
-            var gopher = new Gopher(tile);
+            var gopher = new Gopher(theMap, tile);
             gophers.push(gopher);
             theContainer.add( gopher.mesh );
         });
@@ -364,10 +364,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
     }
 
+    var levelCount = 0;
     function proceedToNextLevel() {
-        var newMap = new Map(5, 5, Tile);
+        levelCount++;
+        var newMap = new Map(3+levelCount, 3+levelCount, Tile);
         newMap.setHelipad(0,0);
-        newMap.makeLinks(2,2);
+        newMap.makeLinks(2+levelCount,2+levelCount);
 
         var newContainer = new THREE.Object3D();
         newContainer.position.x = offset;
@@ -419,7 +421,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     function RotorMesh() {
         var geometry = new THREE.PlaneGeometry(1/map.width,1/map.height/15);
-        var material = new THREE.MeshLambertMaterial( {color:0xFF00FF, side:THREE.DoubleSide} ); 
+        var material = new THREE.MeshLambertMaterial( {color:0xAAAAAA, side:THREE.DoubleSide} ); 
         var mesh = new THREE.Mesh( geometry, material );
         mesh.castShadow = true;
         return mesh;
