@@ -431,6 +431,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 var worldCoordinates = container.localToWorld( heli.mesh.position );
                 scene.remove( container );
                 map = newMap;
+                heli = new Heli(newMap); // ugly fix to force heli size
                 container = newContainer;
                 container.add( heli.mesh );
                 heli.mesh.position = container.worldToLocal( worldCoordinates );
