@@ -415,6 +415,19 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
     }
 
+    function canLevelUp() {
+        if( actualGopherSequence.length !== expectedGopherSequence.length )
+            return false;
+
+        for( var index = 0; index <actualGopherSequence.length; index++) {
+            if(actualGopherSequence[index] !== expectedGopherSequence[index]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     function onGopherGone( theMap, gopherType ) {
         var trophyMesh = new GopherMesh(theMap);
         trophyMesh.material.map = getTextureForGopherType(gopherType);
@@ -431,8 +444,9 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                     });
                 })
                 .onComplete( function() {
+                    var shouldLevelUp = canLevelUp();
                     clearTrophies();
-                    proceedToNextLevel();
+                    proceedToNextLevel(shouldLevelUp);
                 });
 
             progressTween.start();
@@ -440,8 +454,14 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     }
 
     var levelCount = 0;
-    function proceedToNextLevel() {
-        levelCount++;
+    function proceedToNextLevel(shouldLevelUp) {
+        if( shouldLevelUp ) {
+            console.log("leveling up");
+            levelCount++;
+        }
+        else {
+            console.log("staying at same level");
+        }
         var newMap = new Map(3+levelCount, 3+levelCount, Tile);
         newMap.setHelipad(0,0);
         newMap.makeLinks(2+levelCount,2+levelCount);
