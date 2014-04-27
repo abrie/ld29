@@ -2,6 +2,7 @@
 require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var textures = {
         hole: new THREE.ImageUtils.loadTexture("assets/hole.png"),
+        circlehole: new THREE.ImageUtils.loadTexture("assets/circlehole.png"),
         grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
         heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
         gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png"),
@@ -88,6 +89,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             tileB.linkedTo = tileA;
 
             tileA.mesh.material.map = textures.hole;
+            tileA.mesh.material.bmap = textures.hole;
+            tileB.mesh.material.bmap = textures.hole;
             tileB.mesh.material.map = textures.hole;
 
             illustrateConnection(tileA.mesh, tileB.mesh);
@@ -123,7 +126,9 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         function addGopher() {
             var available = getUnoccupiedGopherMounds();
             if( available.length > 0) {
-                util.randomFromArray(available).hasGopher = true;
+                var tile = util.randomFromArray(available);
+                tile.hasGopher = true;
+                tile.linkedTo.mesh.material.map = textures.circlehole;
             }
         }
 
@@ -267,21 +272,22 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         var gopher = contained[0];
 
             var currentState = {
-                z: gopher.mesh.position.z,
+                z: gopher.mesh.position.z, 
                 scale: 1.0
             }
 
             var targetState = {
-                z: -1/map.width/gopherScale/2,
-                scale: 0.1,
+                z: -0.05,
+                scale: 0.05,
             }
 
             var tween = new TWEEN.Tween( currentState )
                 .to( targetState, 2000 )
                 .easing( TWEEN.Easing.Circular.In )
                 .onUpdate( function() {
-                    gopher.mesh.position.z = currentState.z; 
+                    gopher.mesh.position.z = currentState.z;
                     gopher.mesh.scale.x = currentState.scale;
+                    gopher.mesh.scale.y = currentState.scale;
                     gopher.incRotationRate(0.01);
                 })
                 .onStart( function() {
