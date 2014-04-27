@@ -1,5 +1,5 @@
 "use strict";
-require(['util','lib/three.min', 'lib/tween.min'], function(util) {
+require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(util) {
     var textures = {
         hole: new THREE.ImageUtils.loadTexture("assets/hole.png"),
         circlehole: new THREE.ImageUtils.loadTexture("assets/circlehole.png"),
@@ -13,6 +13,37 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         right: new THREE.ImageUtils.loadTexture("assets/right.png"),
         wrong: new THREE.ImageUtils.loadTexture("assets/wrong.png"),
     }
+
+    createjs.Sound.initializeDefaultPlugins();
+    var audioPath = "assets/";
+    var manifest = [
+        {id:"loop1", src:"loop1.mp3"},
+        {id:"loop2", src:"loop2.mp3"},
+        {id:"loop3", src:"loop3.mp3"},
+        {id:"right", src:"right.mp3"},
+        {id:"wrong", src:"wrong.mp3"},
+    ]
+
+    var vacuumSounds = ["loop1","loop2","loop3"];
+    var soundLoadCount = 0;
+    function handleLoad(event) {
+        soundLoadCount++;
+        if( soundLoadCount == manifest.length ) {
+            musicLoaded();
+        }
+    }
+
+    function playRandomSound() {
+        createjs.Sound.play( util.randomFromArray(vacuumSounds) );
+    }
+
+    function musicLoaded() {
+        console.log("all sounds loaded.")
+    }
+
+    createjs.Sound.addEventListener("fileload", handleLoad);
+    createjs.Sound.registerManifest(manifest, audioPath);
+    console.log(createjs.Sound);
 
     var gopherTypeCount = 3;
     function getTextureForGopherType(id) {
@@ -391,6 +422,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         medalMesh.position.x = 1/theMap.width/10;
         trophy.add( medalMesh );
         trophyContainer.add( trophy );
+        createjs.Sound.play( isCorrect ? "right" : "wrong", {volume:0.2});
     }
 
     function showLevelConditions(theMap) {
@@ -436,7 +468,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
         if( gophers.length === 0) {
             var progressTween = new TWEEN.Tween({x:0})
-                .to({x:Math.PI},500)
+                .to({x:Math.PI},2000)
                 .easing(TWEEN.Easing.Linear.None)
                 .onUpdate( function() {
                     trophyMeshes.forEach( function(mesh){
@@ -605,9 +637,13 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 object.position.z = currentState.z;
                 heli_grabberMesh.rotation.y = currentState.r;
             })
+            .onStart( function() {
+                playRandomSound();
+            })
             .onComplete( function() {
                 onVacuumActivated(theMap);
             })
+
 
             vacuumTween.start();
         }
