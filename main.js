@@ -261,7 +261,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                     gopherRemovalInProgress = true;
                 })
                 .onComplete( function() {
-                    scene.remove( gopher.mesh )
+                    container.remove( gopher.mesh )
                     gophers = gophers.filter( function(g) { return g !== gopher; });
                     tile.hasGopher = false;
                     onGopherGone();
