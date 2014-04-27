@@ -14,7 +14,7 @@ body {
 }
 
 #hud {
-    color: white;
+    color: green;
     font-size: 13pt;
     font-family: 'game', serif;
     position: absolute;

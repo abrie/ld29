@@ -1,18 +1,44 @@
 "use strict";
 define(['lib/three.min', 'lib/soundjs.min'], function() {
-    var textures = {
-        hole: new THREE.ImageUtils.loadTexture("assets/hole.png"),
-        circlehole: new THREE.ImageUtils.loadTexture("assets/circlehole.png"),
-        grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
-        heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
-        gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png"),
-        peekbelow: new THREE.ImageUtils.loadTexture("assets/peekbelow.png"),
-        helipad: new THREE.ImageUtils.loadTexture("assets/helipad.png"),
-        c1: new THREE.ImageUtils.loadTexture("assets/c1.png"),
-        c2: new THREE.ImageUtils.loadTexture("assets/c2.png"),
-        right: new THREE.ImageUtils.loadTexture("assets/right.png"),
-        wrong: new THREE.ImageUtils.loadTexture("assets/wrong.png"),
+    var hud = document.getElementById("hud");
+    hud.innerHTML = "loading assets";
+    var textures = {};
+    var textureManifest = [
+        {id:'hole', src:"assets/hole.png"},
+        {id:'circlehole', src:"assets/circlehole.png"},
+        {id:'grass', src: "assets/grass.png"},
+        {id:'heli', src: "assets/heli.png"},
+        {id:'gopher', src: "assets/gopher.png"},
+        {id:'peekbelow', src: "assets/peekbelow.png"},
+        {id:'helipad', src: "assets/helipad.png"},
+        {id:'c1', src: "assets/c1.png"},
+        {id:'c2', src: "assets/c2.png"},
+        {id:'right', src: "assets/right.png"},
+        {id:'wrong', src: "assets/wrong.png"},
+    ];
+
+    function updateHud() {
+        hud.innerHTML += "."; 
     }
+
+    var textureLoadCount = 0;
+    function onTextureLoaded() {
+        updateHud();
+        textureLoadCount++;
+        if( textureLoadCount == textureManifest.length ) {
+            texturesLoaded();
+        }
+    }
+
+    var texturesReady = false;
+    function texturesLoaded() {
+        texturesReady = true;
+        notify();
+    }
+
+    textureManifest.forEach( function(entry) {
+        textures[entry.id] = THREE.ImageUtils.loadTexture(entry.src, THREE.UVMapping, onTextureLoaded);
+    })
 
     createjs.Sound.initializeDefaultPlugins();
     var audioPath = "assets/";
@@ -31,6 +57,7 @@ define(['lib/three.min', 'lib/soundjs.min'], function() {
     var vacuumSounds = ["loop1","loop2","loop3"];
     var soundLoadCount = 0;
     function handleSoundLoad(event) {
+        updateHud();
         soundLoadCount++;
         if( soundLoadCount == manifest.length ) {
             musicLoaded();
@@ -41,15 +68,25 @@ define(['lib/three.min', 'lib/soundjs.min'], function() {
     createjs.Sound.registerManifest(manifest, audioPath);
 
     var onAllLoaded = undefined;
+    var musicReady = false;
     function musicLoaded() {
-        console.log("all sounds loaded.")
-        onAllLoaded();
+        musicReady = true;
+        notify();
     }
 
     function setOnAllLoaded( func ) {
         onAllLoaded = func;
+        notify();
     }
 
+    function notify() {
+        if( musicReady && texturesReady ) {
+            onAllLoaded();
+            hud.innerHTML = "";
+        }
+    }
+
+    console.log("waiting");
     return {
         textures:textures,
         vacuumDrySounds:vacuumDrySounds,
