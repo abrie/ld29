@@ -351,7 +351,10 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
     var trophyMeshes = [];
     var trophyExpectedMeshes = [];
     function initializeTrophyContainer() {
-        trophyContainer.position = new THREE.Vector3(0.50,-0.8,0.10);
+        trophyContainer.position = new THREE.Vector3(0.55,-0.6,0.10);
+        trophyContainer.scale.x = 0.75;
+        trophyContainer.scale.y = 0.75;
+        trophyContainer.scale.z = 0.75;
         scene.add( trophyContainer );
     }
 
@@ -397,19 +400,20 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
         medalMesh.scale.z = 0;
         trophy.add( medalMesh );
 
-        var upScale = new TWEEN.Tween({scale:0.01})
-            .to({scale:5.5},1000)
+        var upScale = new TWEEN.Tween({scale:0.01,angle:0})
+            .to({scale:2.5,angle:Math.PI*8},1000)
             .easing(TWEEN.Easing.Circular.In)
             .onUpdate( function() {
                 medalMesh.scale.x = this.scale;
                 medalMesh.scale.y = this.scale;
                 medalMesh.scale.z = this.scale;
+                medalMesh.rotation.y = this.angle;
                 })
             .onComplete( function() {
                 createjs.Sound.play( isCorrect ? "right" : "wrong", {volume:0.2});
                 });
 
-        var downScale = new TWEEN.Tween({scale:5.5})
+        var downScale = new TWEEN.Tween({scale:2.5})
             .to({scale:1},1000)
             .easing(TWEEN.Easing.Circular.InOut)
             .onUpdate( function() {
@@ -853,7 +857,7 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
                     if( tile.linkedTo.hasGopher ) {
                         heli.activateVacuum( theMap );
                     }
-                    else {
+                    else if(!tile.hasGopher) {
                         heli.activateDryVacuum( theMap );
                     }
                 }
