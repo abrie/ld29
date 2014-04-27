@@ -311,7 +311,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         newMap.setHelipad(0,0);
         newMap.makeLinks(2,2);
 
-        var offset = 1;
+        var offset = 1.5;
         var newContainer = new THREE.Object3D();
         newContainer.position.x = offset;
         populateContainerWithTiles(newMap, newContainer);
@@ -328,8 +328,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
 
         var tween = new TWEEN.Tween(current)
-            .to(target, 1000)
-            .easing(TWEEN.Easing.Elastic.InOut)
+            .to(target, 3000)
+            .easing(TWEEN.Easing.Elastic.Out)
             .onUpdate( function() {
                 container.position.x = -current.delta;
                 newContainer.position.x = offset-current.delta;
