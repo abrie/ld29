@@ -172,8 +172,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     scene.add( peekButton )
 
     var TileMesh = function(mapWidth, mapHeight) {
-        var geometry = new THREE.CubeGeometry(1/mapWidth,1/mapHeight,0.01);
-        var material = new THREE.MeshLambertMaterial( { map: textures.grass, side: THREE.DoubleSide } );
+        var geometry = new THREE.BoxGeometry(1/mapWidth,1/mapHeight,0.01);
+        var material = new THREE.MeshLambertMaterial( { map: textures.grass, transparent:true, side: THREE.DoubleSide } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.receiveShadow = true;
         return mesh;
@@ -268,10 +268,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
             var currentState = {
                 z: gopher.mesh.position.z,
+                scale: 1.0
             }
 
             var targetState = {
                 z: -1/map.width/gopherScale/2,
+                scale: 0.1,
             }
 
             var tween = new TWEEN.Tween( currentState )
@@ -279,6 +281,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 .easing( TWEEN.Easing.Circular.In )
                 .onUpdate( function() {
                     gopher.mesh.position.z = currentState.z; 
+                    gopher.mesh.scale.x = currentState.scale;
                     gopher.incRotationRate(0.01);
                 })
                 .onStart( function() {
