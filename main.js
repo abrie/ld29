@@ -10,13 +10,17 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         helipad: new THREE.ImageUtils.loadTexture("assets/helipad.png"),
         c1: new THREE.ImageUtils.loadTexture("assets/c1.png"),
         c2: new THREE.ImageUtils.loadTexture("assets/c2.png"),
+        right: new THREE.ImageUtils.loadTexture("assets/right.png"),
+        wrong: new THREE.ImageUtils.loadTexture("assets/wrong.png"),
     }
 
+    var gopherTypeCount = 3;
     function getTextureForGopherType(id) {
-        switch(id%3) {
+        switch(id) {
             case 0: return textures.c1; break;
             case 1: return textures.c2; break;
             case 2: return textures.gopher; break;
+            default: console.log("unknown gopher type"); return undefined; break;
         }
     }
 
@@ -118,7 +122,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 linkTwoTiles();
             }
             for(var i = 0; i < gopherCount ; i++) {
-                addGopher( i );
+                addGopher( i % gopherTypeCount );
             }
         }
 
@@ -344,10 +348,25 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         trophyExpectedMeshes.length = 0;
     }
 
-    function addTrophy( mesh ) {
-        trophyMeshes.push( mesh );
-        mesh.position.z = 0 + 1/map.width/2*(trophyMeshes.length-1);
-        trophyContainer.add( mesh );
+    function MedalMesh(theMap, isCorrect) {
+        var geometry = new THREE.PlaneGeometry(1/theMap.width/gopherScale/3,1/theMap.height/gopherScale/3);
+        var material = new THREE.MeshBasicMaterial( { transparent:true, side: THREE.DoubleSide } );
+        material.map = isCorrect ? textures.right : textures.wrong
+        var mesh = new THREE.Mesh( geometry, material );
+        mesh.rotation.x = Math.PI/2;
+        return mesh;
+    }
+
+    function addTrophy( theMap, mesh, isCorrect ) {
+        var trophy = new THREE.Object3D();
+        trophy.add( mesh )
+        trophyMeshes.push( trophy );
+        trophy.position.z = 0 + 1/theMap.width/2*(trophyMeshes.length-1);
+        var medalMesh = new MedalMesh(theMap, isCorrect);
+        medalMesh.position.y = -1/theMap.width/14;
+        medalMesh.position.x = 1/theMap.width/10;
+        trophy.add( medalMesh );
+        trophyContainer.add( trophy );
     }
 
     function showLevelConditions(theMap) {
@@ -365,18 +384,18 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     function updateLevelConditions(gopherTypeId) {
         actualGopherSequence.push(gopherTypeId);
         if( expectedGopherSequence[actualGopherSequence.length-1] === gopherTypeId ) {
-            console.log("check mark");
+            return true;
         }
         else {
-            console.log("x mark");
+            return false;
         }
     }
 
     function onGopherGone( theMap, gopherType ) {
         var trophyMesh = new GopherMesh(theMap);
         trophyMesh.material.map = getTextureForGopherType(gopherType);
-        updateLevelConditions(gopherType);
-        addTrophy( trophyMesh );
+        var isCorrect = updateLevelConditions(gopherType);
+        addTrophy( theMap, trophyMesh, isCorrect );
 
         if( gophers.length === 0) {
             var progressTween = new TWEEN.Tween({x:0})
@@ -776,6 +795,11 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         heli.update();
         gophers.forEach( function(gopher) {
             gopher.update();
+        })
+
+        trophyMeshes.forEach( function(trophyMesh) {
+            console.log(trophyMesh);
+            trophyMesh.rotation.z = Math.sin(theta)/2;
         })
 
         renderer.render( scene, camera );
