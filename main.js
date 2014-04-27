@@ -405,7 +405,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         object.add( heli_mesh );
 
         var rotor_mesh = new RotorMesh();
-        rotor_mesh.position = new THREE.Vector3(-0.003,0,1/map.width/3.3);
+        rotor_mesh.position = new THREE.Vector3(-1/map.width/15,0,1/map.width/6);
         object.add( rotor_mesh );
 
         var heli_grabberMesh = new HeliGrabberMesh();
