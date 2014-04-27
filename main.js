@@ -381,7 +381,7 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
     var trophyMeshes = [];
     var trophyExpectedMeshes = [];
     function initializeTrophyContainer() {
-        trophyContainer.position = new THREE.Vector3(0.50,-1,0.10);
+        trophyContainer.position = new THREE.Vector3(0.50,-0.8,0.10);
         scene.add( trophyContainer );
     }
 
@@ -420,9 +420,36 @@ require(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(u
         var medalMesh = new MedalMesh(theMap, isCorrect);
         medalMesh.position.y = -1/theMap.width/14;
         medalMesh.position.x = 1/theMap.width/10;
-        trophy.add( medalMesh );
         trophyContainer.add( trophy );
-        createjs.Sound.play( isCorrect ? "right" : "wrong", {volume:0.2});
+
+        medalMesh.scale.x = 0;
+        medalMesh.scale.y = 0;
+        medalMesh.scale.z = 0;
+        trophy.add( medalMesh );
+
+        var upScale = new TWEEN.Tween({scale:0.01})
+            .to({scale:5.5},1000)
+            .easing(TWEEN.Easing.Circular.In)
+            .onUpdate( function() {
+                medalMesh.scale.x = this.scale;
+                medalMesh.scale.y = this.scale;
+                medalMesh.scale.z = this.scale;
+                })
+            .onComplete( function() {
+                createjs.Sound.play( isCorrect ? "right" : "wrong", {volume:0.2});
+                });
+
+        var downScale = new TWEEN.Tween({scale:5.5})
+            .to({scale:1},1000)
+            .easing(TWEEN.Easing.Circular.InOut)
+            .onUpdate( function() {
+                medalMesh.scale.x = this.scale;
+                medalMesh.scale.y = this.scale;
+                medalMesh.scale.z = this.scale;
+                });
+
+        upScale.chain( downScale );
+        upScale.start();
     }
 
     function showLevelConditions(theMap) {
