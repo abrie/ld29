@@ -299,6 +299,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                     tile.hasGopher = false;
                     onGopherGone();
                     gopherRemovalInProgress = false;
+                    heli.takeoff();
                 });
             console.log("test");
 
@@ -358,7 +359,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var heliScale = 1.5;
     function HeliMesh() {
-        var geometry = new THREE.PlaneGeometry(1/map.width/heliScale,1/map.height/heliScale);
+        var geometry = new THREE.PlaneGeometry(1/map.width/heliScale,1/map.height/heliScale/2);
         var material = new THREE.MeshBasicMaterial( { map: textures.heli, transparent:true, side:THREE.DoubleSide } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.rotation.x = Math.PI/2;
@@ -377,14 +378,23 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var grabberScale = 25;
     function HeliGrabberMesh() {
-        var length = 1/map.width/grabberScale*5;
+        var object = new THREE.Object3D();
+
+        var length = 1/map.width/grabberScale*6;
         var geometry = new THREE.CylinderGeometry(1/map.width/grabberScale,1/map.width/grabberScale,length);
-        geometry.applyMatrix( new THREE.Matrix4().makeTranslation(0, -length/2, 0) );
         var material = new THREE.MeshPhongMaterial( { color:0xFFFFFF } );
         var mesh = new THREE.Mesh( geometry, material );
-        mesh.rotation.z = Math.PI/2;
 
-        return mesh;
+        var g2 = new THREE.CylinderGeometry(1/map.width/grabberScale,1/map.width/grabberScale*3,length);
+        var m2 = new THREE.Mesh( g2, material );
+        m2.position.y = -length/2;
+
+        object.add(mesh);
+        object.add(m2);
+        object.applyMatrix( new THREE.Matrix4().makeTranslation(0, -length/2, 0) );
+        object.rotation.z = Math.PI/2;
+
+        return object;
     }
 
     var Heli = function() {
@@ -399,7 +409,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         object.add( rotor_mesh );
 
         var heli_grabberMesh = new HeliGrabberMesh();
-        heli_grabberMesh.position = new THREE.Vector3( 0,0,1/map.width/8.0 );
+        heli_grabberMesh.position = new THREE.Vector3( 0,0,0 );
         object.add( heli_grabberMesh )
 
         function update() {
@@ -408,12 +418,37 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
         var vacuumTween = undefined;
 
+        function takeoff() {
+            var currentState = {
+                z: object.position.z,
+            }
+
+            var targetState = {
+                z: 1/map.height/heliScale,
+                r: Math.PI/2,
+            }
+
+            var tween = new TWEEN.Tween( currentState )
+            .to( targetState, 250 )
+            .easing( TWEEN.Easing.Circular.InOut )
+            .onUpdate( function() {
+                object.position.z = currentState.z;
+            })
+            .onComplete( function() {
+                deactivateVacuum();
+            })
+
+            tween.start();
+        }
+
         function activateVacuum() {
             var currentState = {
+                z: object.position.z,
                 r: heli_grabberMesh.rotation.y,
             }
 
             var targetState = {
+                z: 0.05,
                 r: Math.PI/2,
             }
 
@@ -421,8 +456,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             .to( targetState, 250 )
             .easing( TWEEN.Easing.Circular.InOut )
             .onUpdate( function() {
-                heli_grabberMesh.rotation.y = currentState.r
-                //object.rotation.y = currentState.r
+                object.position.z = currentState.z;
+                heli_grabberMesh.rotation.y = currentState.r;
             })
             .onComplete( function() {
                 onVacuumActivated();
@@ -445,10 +480,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             .easing( TWEEN.Easing.Circular.InOut )
             .onUpdate( function() {
                 heli_grabberMesh.rotation.y = currentState.r
-            })
-            .onComplete( function() {
-                console.log("rotation complete");
-            })
+            });
 
             vacuumTween.start();
         }
@@ -456,6 +488,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         return {
             activateVacuum:activateVacuum,
             deactivateVacuum:deactivateVacuum,
+            takeoff:takeoff,
             update: update,
             tile: undefined,
             mesh: object,
