@@ -372,12 +372,10 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         newMap.makeLinks(2+levelCount,2+levelCount);
 
         var newContainer = new THREE.Object3D();
-        newContainer.position.x = offset;
         populateContainerWithTiles(newMap, newContainer);
         populateContainerWithIllustrations(newMap, newContainer);
         populateContainerWithGophers(newMap, newContainer);
         scene.add(newContainer);
-
 
         var offset = 1.7;
         var current = {
