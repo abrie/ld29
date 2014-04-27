@@ -2,11 +2,22 @@
 require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     var textures = {
         hole: new THREE.ImageUtils.loadTexture("assets/hole.png"),
+        circlehole: new THREE.ImageUtils.loadTexture("assets/circlehole.png"),
         grass: new THREE.ImageUtils.loadTexture("assets/grass.png"),
         heli: new THREE.ImageUtils.loadTexture("assets/heli.png"),
         gopher: new THREE.ImageUtils.loadTexture("assets/gopher.png"),
         peekbelow: new THREE.ImageUtils.loadTexture("assets/peekbelow.png"),
-        helipad: new THREE.ImageUtils.loadTexture("assets/helipad.png")
+        helipad: new THREE.ImageUtils.loadTexture("assets/helipad.png"),
+        c1: new THREE.ImageUtils.loadTexture("assets/c1.png"),
+        c2: new THREE.ImageUtils.loadTexture("assets/c2.png"),
+    }
+
+    function getTextureForGopherType(id) {
+        switch(id) {
+            case 0: return textures.c1; break;
+            case 1: return textures.c2; break;
+            case 3: return textures.gopher; break;
+        }
     }
 
     var scene = new THREE.Scene();
@@ -41,14 +52,14 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             var numPoints = 100;
             var m = illustrations.length+1;
             var spline = new THREE.SplineCurve3([
-                meshA.position.clone(),
-                meshA.position.clone().add( new THREE.Vector3(0,0,-0.05*m)),
-                meshB.position.clone().add( new THREE.Vector3(0,0,-0.05*m)),
-                meshB.position.clone(),
+                meshA.position.clone().add( new THREE.Vector3(0,0,-0.02)),
+                meshA.position.clone().add( new THREE.Vector3(0,0,-0.02-0.05*m)),
+                meshB.position.clone().add( new THREE.Vector3(0,0,-0.02-0.05*m)),
+                meshB.position.clone().add( new THREE.Vector3(0,0,-0.02)),
             ]);
 
             var material = new THREE.MeshLambertMaterial({color:0xFFFFFF, linewidth:10});
-            var geometry = new THREE.TubeGeometry( spline, 100, 0.025, 5, false);
+            var geometry = new THREE.TubeGeometry( spline, 50, 0.025, 12, false);
             var mesh = new THREE.Mesh(geometry, material);
 
             illustrations.push(mesh);
@@ -88,6 +99,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             tileB.linkedTo = tileA;
 
             tileA.mesh.material.map = textures.hole;
+            tileA.mesh.material.bmap = textures.hole;
+            tileB.mesh.material.bmap = textures.hole;
             tileB.mesh.material.map = textures.hole;
 
             illustrateConnection(tileA.mesh, tileB.mesh);
@@ -98,6 +111,15 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             var tile = tiles[y*width+x];
             helipadTile = tile;
             tile.mesh.material.map = textures.helipad;
+        }
+
+        function makeLinks( linkCount, gopherCount ) {
+            for(var i = 0; i < linkCount; i++) {
+                linkTwoTiles();
+            }
+            for(var i = 0; i < gopherCount ; i++) {
+                addGopher( i );
+            }
         }
 
         function getHelipad() {
@@ -111,10 +133,13 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             })
         }
 
-        function addGopher() {
+        function addGopher(type) {
             var available = getUnoccupiedGopherMounds();
             if( available.length > 0) {
-                util.randomFromArray(available).hasGopher = true;
+                var tile = util.randomFromArray(available);
+                tile.hasGopher = true;
+                tile.gopherType = type;
+                tile.linkedTo.mesh.material.map = textures.circlehole;
             }
         }
 
@@ -136,8 +161,6 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             localToModel:localToModel,
             targetMeshes:targetMeshes,
             tilesWithGopherMounds: tilesWithGopherMounds,
-            linkTwoTiles: linkTwoTiles,
-            addGopher: addGopher,
             getTilesWithGopher: getTilesWithGopher,
             findTileByMesh: findTileByMesh,
             getTile: getTile,
@@ -145,6 +168,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             getHelipad: getHelipad,
             tiles: tiles,
             illustrations: illustrations,
+            makeLinks: makeLinks,
         }
     }
 
@@ -164,8 +188,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     scene.add( peekButton )
 
     var TileMesh = function(mapWidth, mapHeight) {
-        var geometry = new THREE.CubeGeometry(1/mapWidth,1/mapHeight,0.01);
-        var material = new THREE.MeshLambertMaterial( { map: textures.grass, side: THREE.DoubleSide } );
+        var geometry = new THREE.BoxGeometry(1/mapWidth,1/mapHeight,0.01);
+        var material = new THREE.MeshLambertMaterial( { map: textures.grass, transparent:true, side: THREE.DoubleSide } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.receiveShadow = true;
         return mesh;
@@ -182,11 +206,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var map = new Map(5, 5, Tile);
     map.setHelipad(0,0);
-    map.linkTwoTiles();
-    //map.linkTwoTiles();
-    //map.linkTwoTiles();
-    //map.addGopher();
-    map.addGopher();
+    map.makeLinks(1,1);
 
     var gopherScale = 2;
     function GopherMesh() {
@@ -200,6 +220,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var Gopher = function(tile) {
         var mesh = new GopherMesh(); 
+        mesh.material.map = getTextureForGopherType(tile.gopherType); 
         mesh.position = map.localToModel(tile.x, tile.y, 1/map.height/gopherScale/2);
 
         var rotationRate = 0;
@@ -263,18 +284,22 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         var gopher = contained[0];
 
             var currentState = {
-                z: gopher.mesh.position.z,
+                z: gopher.mesh.position.z, 
+                scale: 1.0
             }
 
             var targetState = {
-                z: -1/map.width/gopherScale/2,
+                z: -0.05,
+                scale: 0.05,
             }
 
             var tween = new TWEEN.Tween( currentState )
                 .to( targetState, 2000 )
                 .easing( TWEEN.Easing.Circular.In )
                 .onUpdate( function() {
-                    gopher.mesh.position.z = currentState.z; 
+                    gopher.mesh.position.z = currentState.z;
+                    gopher.mesh.scale.x = currentState.scale;
+                    gopher.mesh.scale.y = currentState.scale;
                     gopher.incRotationRate(0.01);
                 })
                 .onStart( function() {
@@ -283,11 +308,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
                 .onComplete( function() {
                     container.remove( gopher.mesh )
                     gophers = gophers.filter( function(g) { return g !== gopher; });
+                    onGopherGone(tile.gopherType);
                     tile.hasGopher = false;
-                    onGopherGone();
+                    tile.gopherType = undefined;
                     gopherRemovalInProgress = false;
+                    heli.takeoff();
                 });
-            console.log("test");
 
             tween.start();
     }
@@ -295,23 +321,54 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     function action_nothing() {
     }
 
-    function onGopherGone() {
+    var trophyContainer = new THREE.Object3D();
+    var trophyMeshes = [];
+    function initializeTrophyContainer() {
+        trophyContainer.position = new THREE.Vector3(0.65,-1,0.10);
+        scene.add( trophyContainer );
+    }
+
+    function clearTrophies() {
+        trophyMeshes.forEach( function(mesh) {
+            trophyContainer.remove(mesh);
+        })
+        trophyMeshes.length = 0;
+    }
+
+    function addTrophy( mesh ) {
+        trophyMeshes.push( mesh );
+        mesh.position.z = 0 + 1/map.width/2*(trophyMeshes.length-1);
+        trophyContainer.add( mesh );
+    }
+
+    function onGopherGone( gopherType ) {
+        var trophyMesh = new GopherMesh();
+        trophyMesh.material.map = getTextureForGopherType(gopherType);
+        addTrophy( trophyMesh );
+
         if( gophers.length === 0) {
-            proceedToNextLevel();
+            var progressTween = new TWEEN.Tween({x:0})
+                .to({x:Math.PI},500)
+                .easing(TWEEN.Easing.Linear.None)
+                .onUpdate( function() {
+                    trophyMeshes.forEach( function(mesh){
+                        mesh.rotation.z += 0.01*Math.random();
+                    });
+                })
+                .onComplete( function() {
+                    clearTrophies();
+                    proceedToNextLevel();
+                });
+
+            progressTween.start();
         }
-        console.log("gopher eliminated");
     }
 
     function proceedToNextLevel() {
         var newMap = new Map(5, 5, Tile);
         newMap.setHelipad(0,0);
-        newMap.linkTwoTiles();
-        newMap.linkTwoTiles();
-        newMap.linkTwoTiles();
-        newMap.addGopher();
-        newMap.addGopher();
+        newMap.makeLinks(2,2);
 
-        var offset = 1;
         var newContainer = new THREE.Object3D();
         newContainer.position.x = offset;
         populateContainerWithTiles(newMap, newContainer);
@@ -319,6 +376,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         addGophersToContainer(newMap, newContainer);
         scene.add(newContainer);
 
+
+        var offset = 1.7;
         var current = {
             delta: 0,
         }
@@ -328,18 +387,20 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         }
 
         var tween = new TWEEN.Tween(current)
-            .to(target, 1000)
-            .easing(TWEEN.Easing.Elastic.InOut)
+            .to(target, 2000)
+            .easing(TWEEN.Easing.Cubic.Out)
             .onUpdate( function() {
                 container.position.x = -current.delta;
                 newContainer.position.x = offset-current.delta;
             })
             .onComplete( function() {
                 container.remove( heli.mesh );
+                var worldCoordinates = container.localToWorld( heli.mesh.position );
                 scene.remove( container );
                 map = newMap;
                 container = newContainer;
                 container.add( heli.mesh );
+                heli.mesh.position = container.worldToLocal( worldCoordinates );
                 moveHeli( map.getTile(0,0) );
             });
         tween.start();
@@ -347,7 +408,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var heliScale = 1.5;
     function HeliMesh() {
-        var geometry = new THREE.PlaneGeometry(1/map.width/heliScale,1/map.height/heliScale);
+        var geometry = new THREE.PlaneGeometry(1/map.width/heliScale,1/map.height/heliScale/2);
         var material = new THREE.MeshBasicMaterial( { map: textures.heli, transparent:true, side:THREE.DoubleSide } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.rotation.x = Math.PI/2;
@@ -366,14 +427,23 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
     var grabberScale = 25;
     function HeliGrabberMesh() {
-        var length = 1/map.width/grabberScale*5;
+        var object = new THREE.Object3D();
+
+        var length = 1/map.width/grabberScale*6;
         var geometry = new THREE.CylinderGeometry(1/map.width/grabberScale,1/map.width/grabberScale,length);
-        geometry.applyMatrix( new THREE.Matrix4().makeTranslation(0, -length/2, 0) );
         var material = new THREE.MeshPhongMaterial( { color:0xFFFFFF } );
         var mesh = new THREE.Mesh( geometry, material );
-        mesh.rotation.z = Math.PI/2;
 
-        return mesh;
+        var g2 = new THREE.CylinderGeometry(1/map.width/grabberScale,1/map.width/grabberScale*3,length);
+        var m2 = new THREE.Mesh( g2, material );
+        m2.position.y = -length/2;
+
+        object.add(mesh);
+        object.add(m2);
+        object.applyMatrix( new THREE.Matrix4().makeTranslation(0, -length/2, 0) );
+        object.rotation.z = Math.PI/2;
+
+        return object;
     }
 
     var Heli = function() {
@@ -384,11 +454,11 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         object.add( heli_mesh );
 
         var rotor_mesh = new RotorMesh();
-        rotor_mesh.position = new THREE.Vector3(-0.003,0,1/map.width/3.3);
+        rotor_mesh.position = new THREE.Vector3(-1/map.width/15,0,1/map.width/6);
         object.add( rotor_mesh );
 
         var heli_grabberMesh = new HeliGrabberMesh();
-        heli_grabberMesh.position = new THREE.Vector3( 0,0,1/map.width/8.0 );
+        heli_grabberMesh.position = new THREE.Vector3( 0,0,0 );
         object.add( heli_grabberMesh )
 
         function update() {
@@ -397,12 +467,37 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
 
         var vacuumTween = undefined;
 
+        function takeoff() {
+            var currentState = {
+                z: object.position.z,
+            }
+
+            var targetState = {
+                z: 1/map.height/heliScale,
+                r: Math.PI/2,
+            }
+
+            var tween = new TWEEN.Tween( currentState )
+            .to( targetState, 250 )
+            .easing( TWEEN.Easing.Circular.InOut )
+            .onUpdate( function() {
+                object.position.z = currentState.z;
+            })
+            .onComplete( function() {
+                deactivateVacuum();
+            })
+
+            tween.start();
+        }
+
         function activateVacuum() {
             var currentState = {
+                z: object.position.z,
                 r: heli_grabberMesh.rotation.y,
             }
 
             var targetState = {
+                z: 0.05,
                 r: Math.PI/2,
             }
 
@@ -410,8 +505,8 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             .to( targetState, 250 )
             .easing( TWEEN.Easing.Circular.InOut )
             .onUpdate( function() {
-                heli_grabberMesh.rotation.y = currentState.r
-                //object.rotation.y = currentState.r
+                object.position.z = currentState.z;
+                heli_grabberMesh.rotation.y = currentState.r;
             })
             .onComplete( function() {
                 onVacuumActivated();
@@ -434,10 +529,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
             .easing( TWEEN.Easing.Circular.InOut )
             .onUpdate( function() {
                 heli_grabberMesh.rotation.y = currentState.r
-            })
-            .onComplete( function() {
-                console.log("rotation complete");
-            })
+            });
 
             vacuumTween.start();
         }
@@ -445,6 +537,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         return {
             activateVacuum:activateVacuum,
             deactivateVacuum:deactivateVacuum,
+            takeoff:takeoff,
             update: update,
             tile: undefined,
             mesh: object,
@@ -541,13 +634,12 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
         if( controlsIntersection.length > 0 ) {
            peekBelowTheSurface(); 
         }
-
-        var intersects = ray.intersectObjects( map.targetMeshes )
-        if( intersects.length > 0 ) {
-            intersects.forEach( function( intersected ) {
-                var tile = map.findTileByMesh( intersected.object );
+        else {
+            var intersects = ray.intersectObjects( map.targetMeshes )
+            if( intersects.length > 0 ) {
+                var tile = map.findTileByMesh( intersects[0].object );
                 moveHeli( tile );
-            })
+            }
         }
     }
 
@@ -629,6 +721,7 @@ require(['util','lib/three.min', 'lib/tween.min'], function(util) {
     document.addEventListener('mousedown', onDocumentMouseDown, false);
 
     moveHeli( map.getTile(0,0) );
+    initializeTrophyContainer();
 
     var theta = 0;
     function animate() {
