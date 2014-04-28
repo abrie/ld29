@@ -358,12 +358,33 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
     var trophyContainer = new THREE.Object3D();
     var trophyMeshes = [];
     var trophyExpectedMeshes = [];
+    var trophyPosition = new THREE.Vector3(0.55,-0.6,0.10);
     function initializeTrophyContainer() {
-        trophyContainer.position = new THREE.Vector3(0.55,-0.6,0.10);
+        trophyContainer.position = trophyPosition.clone();
         trophyContainer.scale.x = 0.75;
         trophyContainer.scale.y = 0.75;
         trophyContainer.scale.z = 0.75;
         scene.add( trophyContainer );
+    }
+
+    function vanishTrophyContainer() {
+        var tween = new TWEEN.Tween({a:trophyPosition.z})
+            .to({a:-3},1000)
+            .easing(TWEEN.Easing.Linear.None)
+            .onUpdate( function() {
+                trophyContainer.position.z = this.a;
+            });
+            tween.start();
+    }
+
+    function showTrophyContainer() {
+        var tween = new TWEEN.Tween({a:1})
+            .to({a:trophyPosition.z},1000)
+            .easing(TWEEN.Easing.Elastic.Out)
+            .onUpdate( function() {
+                trophyContainer.position.z = this.a;
+            });
+            tween.start();
     }
 
     var expectedGopherSequence = [];
@@ -532,6 +553,9 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
                 container.position.x = -current.delta;
                 newContainer.position.x = offset-current.delta;
             })
+            .onStart( function() {
+                vanishTrophyContainer();
+            })
             .onComplete( function() {
                 container.remove( heli.mesh );
                 var worldCoordinates = container.localToWorld( heli.mesh.position );
@@ -542,7 +566,9 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
                 container.add( heli.mesh );
                 heli.mesh.position = container.worldToLocal( worldCoordinates );
                 moveHeli( map, map.getTile(0,0) );
+                showTrophyContainer();
             });
+
         tween.start();
     }
 
