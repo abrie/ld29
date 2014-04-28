@@ -75,6 +75,7 @@ define(['lib/three.min', 'lib/soundjs.min'], function() {
 
     createjs.Sound.addEventListener("fileload", handleSoundLoad);
     createjs.Sound.registerManifest(manifest, audioPath);
+    createjs.Sound.setVolume(0.15);
 
     var onAllLoaded = undefined;
     var musicReady = false;
