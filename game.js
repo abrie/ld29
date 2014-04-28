@@ -505,7 +505,7 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
         }
         var newMap = new Map(3+levelCount, 3+levelCount, Tile);
         newMap.setHelipad(0,0);
-        newMap.makeLinks(2+levelCount,2+levelCount);
+        newMap.makeLinks(1+levelCount,1+levelCount);
         showLevelConditions(newMap);
 
         var newContainer = new THREE.Object3D();
@@ -874,7 +874,6 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
     }
 
     function onHeliMoved( tile ) {
-        console.log("Heli moved", tile);
     }
 
     function failPeek() {
