@@ -8,6 +8,5 @@ You are the pilot of a low-tech Suction Chopper. Click on a gopher hole to posit
 There is no programmed ending, but eventually toe game will become too difficult to play (for either you or your hardware).
 
 ![Screenshot 1](screenshots/screenshot1.png)
-![Screenshot 1](screenshots/screenshot2.png)
 
 Play here: http://abrie.github.io/ld29
