@@ -790,7 +790,7 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
     document.body.appendChild( renderer.domElement );
 
     var mouse = {x:0,y:0};
-    function onDocumentMouseMove(e) {
+    function onDocumentMouseMove(event) {
         map.hideHighlights();
         mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -807,7 +807,7 @@ define(['util','lib/three.min', 'lib/tween.min', 'lib/soundjs.min'], function(ut
         }
     }
 
-    function onDocumentMouseDown(e) {
+    function onDocumentMouseDown(event) {
         mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
